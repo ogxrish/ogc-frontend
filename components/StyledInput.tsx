@@ -12,7 +12,7 @@ export default function StyledInput({ placeholder, type, value, onChange }: Styl
             value={value}
             placeholder={placeholder}
             onChange={onChange}
-            className="bg-transparent w-full py-2 px-4 text-white placeholder-white focus:outline-none border-2 border-white"
+            className="bg-transparent w-full py-4 px-4 text-white rounded-lg placeholder-white focus:outline-none border-2 border-white"
         />
     );
 }

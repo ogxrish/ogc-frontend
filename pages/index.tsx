@@ -1,19 +1,23 @@
 import BasicButton from "@/components/BasicButton";
-import { claim, getClaimable, getEpochVotes, getGlobalAccountData, getLockStatus, getMyVote, getUnlockStatus, lock, newEpoch, unlock, vote } from "@/components/chain";
+import BigText from "@/components/BigText";
+import { claim, getClaimable, getEpochVotes, getGlobalAccountData, getLockStatus, getMyVote, getProgramBalance, getUnlockStatus, lock, newEpoch, unlock, vote } from "@/components/chain";
 import Countdown from "@/components/Countdown";
+import LoadedText from "@/components/LoadedText";
 import PoolWidget from "@/components/PoolWidget";
 import StyledInput from "@/components/StyledInput";
 import TransactionFailure from "@/components/TransactionFailure";
 import TransactionPending from "@/components/TransactionPending";
 import TransactionSuccess from "@/components/TransactionSuccess";
-import WalletButton from "@/components/WalletButton";
 import { BN } from "@coral-xyz/anchor";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
 const DEFAULT_MAX: number = 10000;
+type ViewState = "INFO" | "LOCK" | "STAKE" | "CLAIM" | "STATS";
 export default function Home() {
   const { publicKey, signTransaction } = useWallet();
+  const [state, setState] = useState<ViewState>("INFO");
   const [lockedOgg, setLockedOgg] = useState<BN>(new BN(0));
   const [availableOgg, setAvailableOgg] = useState<BN>(new BN(0));
   const [claimableOgc, setClaimableOgc] = useState<BN>(new BN(0));
@@ -29,9 +33,44 @@ export default function Home() {
   const [globalAccount, setGlobalAccount] = useState<any>();
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [voted, setVoted] = useState<boolean>(false);
+  const [ogcReward, setOgcReward] = useState<BN>();
+  const [totalUnlockableOgg, setTotalUnlockableOgg] = useState<string>();
+  const [totalLockedOgg, setTotalLockedOgg] = useState<string>();
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<any[]>();
+  const router = useRouter();
   useEffect(() => {
-    getGlobalAccountData().then((data) => {
+    if (router && router.isReady) {
+      const { state } = router.query;
+      setState(state as ViewState || "INFO");
+    }
+  }, [router, router.isReady]);
+  useEffect(() => {
+    if (!router || !router.isReady) return;
+    const newQuery = { ...router.query, state };
+    router.push({
+      pathname: router.pathname,  // Keep the same pathname
+      query: newQuery,            // Update the query parameters
+    });
+  }, [state]);
+  useEffect(() => {
+    (async () => {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/ogc-data`);
+      const json = await response.json();
+      setTotalLockedOgg(json.totalLocked);
+      setTotalUnlockableOgg(json.totalUnlocked);
+      setLeaderboard(json.leaderboard);
+      setChartData(json.incremental.map((i: any) => {
+        return {
+
+        }
+      }))
+    })();
+  }, []);
+  useEffect(() => {
+    getGlobalAccountData().then(async (data) => {
       const end = data.epochEndTime.toNumber() * 1000;
+      const { ogcBalance } = await getProgramBalance();
       setGlobalAccount({
         epoch: data.epoch.toNumber(),
         epochEndTime: new Date(end),
@@ -40,6 +79,7 @@ export default function Home() {
         rewardPercent: data.rewardPercent.toNumber()
       });
       setTimeLeft(end - Date.now());
+      setOgcReward(new BN(ogcBalance.toString()).mul(data.rewardPercent).div(new BN(100)));
     });
   }, []);
   useEffect(() => {
@@ -187,57 +227,96 @@ export default function Home() {
           <TransactionPending />
         </div>
       }
-      <p className="text-4xl">OGC Reserve</p>
-      <WalletButton />
-      <p>Your locked OGG: {lockedOgg.toString()}</p>
-      <div className="flex flex-row justify-center items-center gap-2">
-        <StyledInput
-          placeholder="To lock"
-          value={lockAmount}
-          onChange={(event: any) => setLockAmount(Number(event.target.value))}
-          type="number"
-        />
-        <BasicButton onClick={onLock} text="Lock" disabled={lockAmount <= 0} />
-      </div>
-      <p>Your unlockable OGG: {unlockableOgg}</p>
-      <div className="flex flex-row justify-center items-center gap-2">
-        <StyledInput
-          placeholder="To unlock"
-          value={unlockAmount}
-          onChange={(event: any) => setUnlockAmount(Number(event.target.value))}
-          type="number"
-        />
-        <BasicButton onClick={onUnlock} text="Unlock" disabled={unlockAmount <= 0} />
-      </div>
-      <div className="flex flex-col justify-center items-center gap-4">
-        <p className={`${voted ? "opacity-30" : ""}`}>Available OGG: {availableOgg.toString()}</p>
-        <div className="grid grid-cols-8 gap-2">
-          {Array.from({ length: 16 }).map((_, i) =>
-            <div key={i}>
-              <PoolWidget
-                title={`Pool ${i}`}
-                percent={baseCount[i] / maxBalance * 100}
-                added={voteCount[i] / maxBalance * 100}
-                addAmount={voteCount[i]}
-                onChangeAddAmount={(n: number) => onChangeAddAmount(i, n)}
-                addDisabled={voted || availableOgg <= 0}
-                subtractDisabled={voted || voteCount[i] === 0}
-              />
-            </div>
-          )}
+      <div className="mt-4 flex flex-col h-[80vh] justify-center w-[95%] md:w-[75%] lg:w-[60%] gap-2">
+        <div className="flex flex-row justify-center items-center gap-2">
+          <BasicButton onClick={() => setState("INFO")} text="Info" disabled={state === "INFO"} />
+          <BasicButton onClick={() => setState("LOCK")} text="Lock" disabled={state === "LOCK"} />
+          <BasicButton onClick={() => setState("STAKE")} text="Reserve" disabled={state === "STAKE"} />
+          <BasicButton onClick={() => setState("CLAIM")} text="Claim" disabled={state === "CLAIM"} />
+          <BasicButton onClick={() => setState("STATS")} text="Stats" disabled={state === "STATS"} />
         </div>
-        <div>
-          {/* {timeLeft <= 0 ?
-            <BasicButton text="New Epoch" onClick={onNewEpoch} />
-            :
-            <BasicButton text="Vote" onClick={onVote} disabled={voted || !voteCount.find(v => v != 0)} disabledText={voted ? "You have already voted" : "No stake allocated"} />
-          } */}
-          <BasicButton text="Vote" onClick={onVote} disabled={voted || !voteCount.find(v => v != 0)} disabledText={voted ? "You have already voted" : "No stake allocated"} />
+
+        <div className="flex flex-col gap-2 justify-start overflow-y-auto items-center h-full w-full border-white border-2 rounded-lg p-4">
+          <div className="flex flex-col justify-start items-center overflow-y-auto w-full h-full">
+            {state === "INFO" ?
+              <>
+                <p>Info data here</p>
+              </>
+              :
+              state === "LOCK" ?
+                <div className="flex flex-col justify-center gap-10 items-center w-full h-full">
+                  <LoadedText start="Total Locked $OGG" value={totalLockedOgg} />
+                  <LoadedText start="Total Unlockable $OGG" value={totalUnlockableOgg} />
+                  <div className="flex flex-row justify-center items-center w-full gap-10">
+                    <div>
+                      <BigText text="Locked $OGG" number={lockedOgg.toString()} />
+                      <div className="flex flex-row justify-center items-center gap-2 mt-2">
+                        <StyledInput
+                          placeholder="To lock"
+                          value={lockAmount}
+                          onChange={(event: any) => setLockAmount(Number(event.target.value))}
+                          type="number"
+                        />
+                        <BasicButton onClick={onLock} text="Lock" disabled={lockAmount <= 0} />
+                      </div>
+                    </div>
+                    <div>
+                      <BigText text="Unlockable $OGG" number={unlockableOgg.toString()} />
+                      <div className="flex flex-row justify-center items-center gap-2 mt-2">
+                        <StyledInput
+                          placeholder="To unlock"
+                          value={unlockAmount}
+                          onChange={(event: any) => setUnlockAmount(Number(event.target.value))}
+                          type="number"
+                        />
+                        <BasicButton onClick={onUnlock} text="Unlock" disabled={unlockAmount <= 0} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                :
+                state === "STAKE" ?
+                  <>
+                    <div className="flex flex-col justify-center items-center gap-4">
+                      <LoadedText start="Your available (locked) $OGG" value={availableOgg?.toString()} />
+                      <LoadedText start="$OGC Reward" value={ogcReward?.toString()} />
+                      {/* <p className={`${voted ? "opacity-30" : ""}`}>Available OGG: {availableOgg.toString()}</p> */}
+                      <div className="grid grid-cols-4 gap-2">
+                        {Array.from({ length: 16 }).map((_, i) =>
+                          <div key={i}>
+                            <PoolWidget
+                              title={`Slot ${i}`}
+                              percent={baseCount[i] / maxBalance * 100}
+                              added={voteCount[i] / maxBalance * 100}
+                              addAmount={voteCount[i]}
+                              onChangeAddAmount={(n: number) => onChangeAddAmount(i, n)}
+                              addDisabled={voted || availableOgg <= 0}
+                              subtractDisabled={voted || voteCount[i] === 0}
+                            />
+                          </div>
+                        )}
+                      </div>
+                      <BasicButton text="Vote" onClick={onVote} disabled={voted || !voteCount.find(v => v != 0)} disabledText={voted ? "You have already voted" : "No stake allocated"} />
+                    </div>
+                  </>
+                  :
+                  state === "CLAIM" ?
+                    <div className="flex flex-col justify-center items-center w-[50%] h-full gap-10">
+                      <BigText text="Claimable $OGC" number={claimableOgc.toString()} />
+                      <BasicButton onClick={onClaim} text="Claim" disabled={claimableOgc.eq(new BN(0))} disabledText="No OGC to claim" />
+                    </div>
+                    :
+                    <>
+                      <p>Stats data here</p>
+                    </>
+            }
+          </div>
+          <div className="flex flex-col justify-center items-center">
+            <p>Epoch 0x{globalAccount?.epoch.toString(16)}</p>
+            <Countdown timeLeft={timeLeft} />
+          </div>
         </div>
-        <Countdown timeLeft={timeLeft} />
-        <p>Claimable OGC: {claimableOgc.toString()}</p>
-        <BasicButton onClick={onClaim} text="Claim" disabled={claimableOgc.eq(new BN(0))} disabledText="No OGC to claim" />
       </div>
-    </div>
+    </div >
   );
 }

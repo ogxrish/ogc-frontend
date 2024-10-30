@@ -70,7 +70,7 @@ export default function Admin() {
             <p>Epoch end time: {globalData?.epochEndTime.toString()}</p>
             <p>Epoch lock time: {globalData?.epochLockTime}</p>
             <p>Epoch length: {globalData?.epochLength}</p>
-            <p>Reward percent: {globalData?.rewardPercent}</p>
+            <p>Reward percent: {globalData?.rewardPercent}%</p>
             <BasicButton onClick={onNewEpoch} text="New Epoch" />
             <div className="flex flex-row justify-center items-center gap-2">
                 <div className="flex flex-col justify-center items-center gap-2">
