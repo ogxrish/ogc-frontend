@@ -59,8 +59,9 @@ export default function Home() {
     (async () => {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/ogc-data`);
       const json = await response.json();
+      console.log(json);
       setTotalLockedOgg(json.totalLocked);
-      setTotalUnlockableOgg(json.totalUnlocked);
+      setTotalUnlockableOgg(json.totalUnlockable);
       setLeaderboard(json.leaderboard);
       setChartData(json.incremental.map((i: any) => {
         return {
