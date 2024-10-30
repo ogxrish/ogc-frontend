@@ -1,5 +1,5 @@
 {
-  "address": "8QG3A2KWEh3Hrs1GCfb5vR6RMd9NXa92PityMAFH3Yb2",
+  "address": "DzMgpweyH3jF8yQcD5d3PbDtZq69epXUmaAYf1CPZAkC",
   "metadata": {
     "name": "ogc_reserve",
     "version": "0.1.0",
@@ -377,6 +377,61 @@
         }
       ],
       "args": []
+    },
+    {
+      "name": "create_vote_account",
+      "discriminator": [
+        202,
+        8,
+        183,
+        48,
+        6,
+        243,
+        204,
+        169
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vote_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              },
+              {
+                "kind": "arg",
+                "path": "epoch"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "epoch",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "deposit_ogg",
@@ -1425,6 +1480,14 @@
         "fields": [
           {
             "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "staked",
+            "type": "u64"
+          },
+          {
+            "name": "epoch",
             "type": "u64"
           }
         ]

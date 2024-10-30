@@ -1,7 +1,9 @@
 import BasicButton from "@/components/BasicButton";
 import BigText from "@/components/BigText";
-import { claim, getClaimable, getEpochVotes, getGlobalAccountData, getLockStatus, getMyVote, getProgramBalance, getUnlockStatus, lock, newEpoch, unlock, vote } from "@/components/chain";
+import { claim, getClaimable, getEpochVotes, getGlobalAccountData, getLockStatus, getMyVote, getProgramBalance, getUnlockStatus, lock, newEpoch, ogcDecimals, oggDecimals, unlock, vote } from "@/components/chain";
+import Chart from "@/components/Chart";
 import Countdown from "@/components/Countdown";
+import LeaderboardRow from "@/components/LeaderboardRow";
 import LoadedText from "@/components/LoadedText";
 import PoolWidget from "@/components/PoolWidget";
 import StyledInput from "@/components/StyledInput";
@@ -62,7 +64,12 @@ export default function Home() {
       setLeaderboard(json.leaderboard);
       setChartData(json.incremental.map((i: any) => {
         return {
-
+          id: Number(i.id),
+          dailyReward: new BN(json.dailyOgcReward).div(new BN(10 ** ogcDecimals)).toNumber(),
+          totalReserve: new BN(json.totalReserve).div(new BN(10 ** ogcDecimals)).toNumber(),
+          totalReservers: Number(json.totalReservers),
+          unlockableOgg: new BN(json.unlockableOgg).div(new BN(10 * oggDecimals)).toNumber(),
+          lockedOgg: new BN(json.lockedOgg).div(new BN(10 * oggDecimals)).toNumber(),
         }
       }))
     })();
@@ -306,9 +313,17 @@ export default function Home() {
                       <BasicButton onClick={onClaim} text="Claim" disabled={claimableOgc.eq(new BN(0))} disabledText="No OGC to claim" />
                     </div>
                     :
-                    <>
-                      <p>Stats data here</p>
-                    </>
+                    <div className="flex flex-col justify-center items-center">
+                      <Chart data={chartData} />
+                      <div className="flex flex-col justify-center items-center">
+                        <div className="grid grid-cols-3 w-full">
+                          <p>Wallet</p>
+                          <p>$OGC Claimed</p>
+                          <p>Epochs Participated In</p>
+                        </div>
+                        {leaderboard.map((row) => <LeaderboardRow row={row} />)}
+                      </div>
+                    </div>
             }
           </div>
           <div className="flex flex-col justify-center items-center">

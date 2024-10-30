@@ -5,6 +5,8 @@ import { createAssociatedTokenAccountInstruction, getAccount, getAssociatedToken
 
 const ogcMint = new PublicKey(process.env.NEXT_PUBLIC_OGC_KEY!);
 const oggMint = new PublicKey(process.env.NEXT_PUBLIC_OGG_KEY!);
+export const ogcDecimals = 6;
+export const oggDecimals = 6;
 function getProvider() {
     const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
     const provider = new AnchorProvider(connection, (window as any).solana, AnchorProvider.defaultOptions());
