@@ -322,7 +322,11 @@ export default function Home() {
                           <p>$OGC Claimed</p>
                           <p>Epochs Participated In</p>
                         </div>
-                        {leaderboard.map((row) => <LeaderboardRow row={row} />)}
+                        {leaderboard.map((row, i) => (
+                          <div className="w-full" key={i}>
+                            <LeaderboardRow row={row} />
+                          </div>
+                        ))}
                       </div>
                     </div>
             }
