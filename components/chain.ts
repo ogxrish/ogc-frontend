@@ -67,7 +67,17 @@ export async function withdraw(wallet: PublicKey, amount: number) {
     return tx;
 }
 export async function vote(wallet: PublicKey, epoch: number, votes: number[]) {
-    const { program } = getProvider();
+    const { program, connection } = getProvider();
+    const [voteAccountAddress] = PublicKey.findProgramAddressSync(
+        [Buffer.from("vote"), wallet.toBuffer(), new BN(epoch).toArrayLike(Buffer, "le", 8)],
+        program.programId
+    );
+    const voteAccount = await connection.getAccountInfo(voteAccountAddress);
+    if (!voteAccount) {
+        const tx = await program.methods.createVoteAccount(new BN(epoch)).accounts({
+            signer: wallet
+        }).rpc();
+    }
     const voteBNs = votes.map((v) => new BN(v));
     const tx = await program.methods.vote(new BN(epoch), voteBNs).accounts({
         signer: wallet
@@ -86,8 +96,13 @@ export async function lock(wallet: PublicKey, epoch: number, amount: number, sig
         [Buffer.from("lock"), wallet.toBuffer(), new BN(epoch).toArrayLike(Buffer, "le", 8)],
         program.programId
     );
+    const [statsAccountAddress] = PublicKey.findProgramAddressSync(
+        [Buffer.from("stats"), wallet.toBuffer()],
+        program.programId
+    );
     const userData = await connection.getAccountInfo(userDataAddress);
     const lockAccount = await connection.getAccountInfo(lockAccountAddress);
+    const statsAccount = await connection.getAccountInfo(statsAccountAddress);
     if (!userData) {
         const i = await program.methods.createDataAccount().accounts({
             signer: wallet,
@@ -97,6 +112,12 @@ export async function lock(wallet: PublicKey, epoch: number, amount: number, sig
     }
     if (!lockAccount) {
         const i = await program.methods.createLockAccount(new BN(epoch)).accounts({
+            signer: wallet
+        }).transaction();
+        transaction.add(i);
+    }
+    if (!statsAccount) {
+        const i = await program.methods.createStatsAccount().accounts({
             signer: wallet
         }).transaction();
         transaction.add(i);
@@ -167,7 +188,7 @@ export async function claim(wallet: PublicKey, epoch: number) {
     for (let i = 0; i < epochs.length; i += 5) {
         const transaction = new Transaction();
         for (let ii = i; ii < i + 5 && ii < epochs.length; ii++) {
-            const ix = await program.methods.claim(epochs[i]).accounts({
+            const ix = await program.methods.claim(epochs[i + ii]).accounts({
                 signer: wallet,
                 signerTokenAccount,
             }).transaction();

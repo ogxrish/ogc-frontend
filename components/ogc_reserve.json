@@ -1,5 +1,5 @@
 {
-  "address": "DzMgpweyH3jF8yQcD5d3PbDtZq69epXUmaAYf1CPZAkC",
+  "address": "6S1yfBGPfxHt1jjiGyGFjFkyHVbx7VUcGmrX4RbWqwyS",
   "metadata": {
     "name": "ogc_reserve",
     "version": "0.1.0",
@@ -1176,6 +1176,23 @@
           }
         },
         {
+          "name": "program_authority",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
@@ -1263,6 +1280,48 @@
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "withdraw_sol",
+      "discriminator": [
+        145,
+        131,
+        74,
+        136,
+        65,
+        137,
+        42,
+        38
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "program_authority",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -1385,6 +1444,11 @@
       "code": 6007,
       "name": "InvalidSigner",
       "msg": "Invalid signer"
+    },
+    {
+      "code": 6008,
+      "name": "NoFeesToWithdraw",
+      "msg": "No fees to withdraw"
     }
   ],
   "types": [
@@ -1408,6 +1472,10 @@
           },
           {
             "name": "reward",
+            "type": "u64"
+          },
+          {
+            "name": "voters",
             "type": "u64"
           }
         ]
@@ -1445,6 +1513,10 @@
           {
             "name": "ogg_mint",
             "type": "pubkey"
+          },
+          {
+            "name": "fee_lamports",
+            "type": "u64"
           }
         ]
       }

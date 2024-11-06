@@ -2,6 +2,7 @@
 type PoolWidgetProps = {
     title: string;
     percent: number;
+    voted: number;
     added: number;
     addAmount: number;
     onChangeAddAmount: (n: number) => void;
@@ -9,7 +10,7 @@ type PoolWidgetProps = {
     subtractDisabled?: boolean;
 };
 
-export default function PoolWidget({ title, percent, added, addAmount, onChangeAddAmount, addDisabled, subtractDisabled }: PoolWidgetProps) {
+export default function PoolWidget({ title, percent, voted, added, addAmount, onChangeAddAmount, addDisabled, subtractDisabled }: PoolWidgetProps) {
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = Number(event.target.value);
         if (!Number.isNaN(value)) {
@@ -21,6 +22,7 @@ export default function PoolWidget({ title, percent, added, addAmount, onChangeA
             <p>{title}</p>
             <div className="flex flex-col justify-end items-center w-16 md:w-32 aspect-square border-2 border-white rounded-lg">
                 <div className="w-full bg-green-500" style={{ height: `${Math.min(added, 100)}%` }}></div>
+                <div className="w-full bg-yellow-500" style={{height: `${Math.min(voted, 100)}%`}}></div>
                 <div className="w-full bg-gray-500 rounded-b-md" style={{ height: `${Math.min(percent, 100)}%` }}></div>
             </div>
             <div className="flex flex-row justify-center items-center md:gap-2">

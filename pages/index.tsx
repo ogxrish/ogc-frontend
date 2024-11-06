@@ -29,12 +29,13 @@ export default function Home() {
   const [maxBalance, setMaxBalance] = useState<number>(DEFAULT_MAX);
   const [baseCount, setBaseCount] = useState<number[]>(Array.from({ length: 16 }).map(() => 0));
   const [voteCount, setVoteCount] = useState<number[]>(Array.from({ length: 16 }).map(() => 0));
+  const [myVote, setMyVote] = useState<number[]>(Array.from({length: 16}).map(() => 0));
+  const [voteAmount, setVoteAmount] = useState<BN>(new BN(0));
   const [lockAmount, setLockAmount] = useState<number>(0);
   const [unlockableOgg, setUnlockableOgg] = useState<number>(0);
   const [unlockAmount, setUnlockAmount] = useState<number>(0);
   const [globalAccount, setGlobalAccount] = useState<any>();
   const [timeLeft, setTimeLeft] = useState<number>(0);
-  const [voted, setVoted] = useState<boolean>(false);
   const [ogcReward, setOgcReward] = useState<BN>();
   const [totalUnlockableOgg, setTotalUnlockableOgg] = useState<string>();
   const [totalLockedOgg, setTotalLockedOgg] = useState<string>();
@@ -105,12 +106,14 @@ export default function Home() {
       getMyVote(publicKey, globalAccount.epoch).then(async (fields) => {
         const epochVotes = await getEpochVotes(globalAccount.epoch);
         if (fields) {
+          let voteAmount = new BN(0)
           const baseCount = epochVotes.map((vote: BN, i: number) => {
+            voteAmount = voteAmount.add(vote);
             return vote.sub(fields[i]);
           });
           setBaseCount(baseCount.map((b: BN) => b.toNumber()));
-          setVoteCount(fields.map((b: BN) => b.toNumber()));
-          setVoted(true);
+          setMyVote(fields.map((b: BN) => b.toNumber()));
+          setVoteAmount(voteAmount)
         } else {
           setBaseCount(epochVotes.map((b: BN) => b.toNumber()));
         }
@@ -135,6 +138,7 @@ export default function Home() {
       const txs = await claim(publicKey, globalAccount.epoch);
       console.log(txs);
       setSucceededTransaction(true);
+      setClaimableOgc(new BN(0));
     } catch (e) {
       console.error(e);
       setFailedTransaction(true);
@@ -204,7 +208,7 @@ export default function Home() {
     if (!publicKey || !globalAccount) return;
     try {
       setSendingTransaction(true);
-      const tx = await newEpoch(publicKey, globalAccount.epoch);
+      const tx = await newEpoch(publicKey, globalAccount.epoch + 1);
       console.log(tx);
       setSucceededTransaction(true);
     } catch (e) {
@@ -247,9 +251,15 @@ export default function Home() {
         <div className="flex flex-col gap-2 justify-start overflow-y-auto items-center h-full w-full border-white border-2 rounded-lg p-4">
           <div className="flex flex-col justify-start items-center overflow-y-auto w-full h-full">
             {state === "INFO" ?
-              <>
-                <p>Info data here</p>
-              </>
+              <div className="flex flex-col justify-between items-center text-center w-full h-full">
+                <p>Welcome to the OG Reserve. The reserve <ImportantSpan>distributes $OGC</ImportantSpan>, the common value of the Realm of OGs.</p>
+                <p><ImportantSpan>70% (700B)</ImportantSpan> of $OGC is forever allocated to the reserve</p>
+                <p>Distributions equal <ImportantSpan>1M $OGC</ImportantSpan> to a random reserve slot each epoch. Epochs last for 24 hours beginning at 00:00 UTC.</p>
+                <p>Wallets can add Reserves to any reserve slot each epoch for any amount of $OGG. Reserve cost <ImportantSpan>increases</ImportantSpan> with each new reserve during an epoch. Difficulty <ImportantSpan>resets</ImportantSpan> each epoch. $OGG reserves are locked to reserve slots for 100 epochs. Reserves are distributed their proportion of $OGC while locked.</p>
+                <p>Reserve fees are currently <ImportantSpan>paid in $SOL</ImportantSpan>. $OGG and $OGC will soon be allowed.</p>
+                <p><ImportantSpan>100% of reserve fees</ImportantSpan> collected go towards repurchasing $OGC from the open market to replenish the reserve. $OGC distributed but unclaimed after 10 epochs is <ImportantSpan>returned to the reserve</ImportantSpan>.</p>
+                <p><ImportantSpan>Those with $OGC liquidity will ascend in the Realm of OGs</ImportantSpan></p>
+              </div>
               :
               state === "LOCK" ?
                 <div className="flex flex-col justify-center gap-10 items-center w-full h-full">
@@ -286,8 +296,8 @@ export default function Home() {
                 state === "STAKE" ?
                   <>
                     <div className="flex flex-col justify-center items-center gap-4">
-                      <LoadedText start="Your available (locked) $OGG" value={availableOgg?.toString()} />
-                      <LoadedText start="$OGC Reward" value={ogcReward?.toString()} />
+                      <LoadedText start="Your available (locked) $OGG" value={availableOgg.sub(voteAmount).toString()} />
+                      <LoadedText start="$OGC Epoch Reward" value={ogcReward?.toString()} />
                       {/* <p className={`${voted ? "opacity-30" : ""}`}>Available OGG: {availableOgg.toString()}</p> */}
                       <div className="grid grid-cols-4 gap-2">
                         {Array.from({ length: 16 }).map((_, i) =>
@@ -295,16 +305,21 @@ export default function Home() {
                             <PoolWidget
                               title={`Slot ${i}`}
                               percent={baseCount[i] / maxBalance * 100}
+                              voted={myVote[i] / maxBalance * 100}
                               added={voteCount[i] / maxBalance * 100}
                               addAmount={voteCount[i]}
                               onChangeAddAmount={(n: number) => onChangeAddAmount(i, n)}
-                              addDisabled={voted || availableOgg <= 0}
-                              subtractDisabled={voted || voteCount[i] === 0}
+                              addDisabled={availableOgg.sub(voteAmount).eq(new BN(0)) || availableOgg <= 0}
+                              subtractDisabled={availableOgg.sub(voteAmount).eq(new BN(0)) || voteCount[i] === 0}
                             />
                           </div>
                         )}
                       </div>
-                      <BasicButton text="Vote" onClick={onVote} disabled={voted || !voteCount.find(v => v != 0)} disabledText={voted ? "You have already voted" : "No stake allocated"} />
+                      {timeLeft < 0 && false ?
+                        <BasicButton text="New Epoch" onClick={onNewEpoch} />
+                        :
+                        <BasicButton text="Vote" onClick={onVote} disabled={availableOgg.sub(voteAmount).eq(new BN(0))} disabledText={availableOgg.sub(voteAmount).eq(new BN(0)) ? "You have already voted" : "No stake allocated"} />
+                      }
                     </div>
                   </>
                   :
@@ -338,5 +353,13 @@ export default function Home() {
         </div>
       </div>
     </div >
+  );
+}
+
+function ImportantSpan({ children }: { children: React.ReactNode; }) {
+  return (
+    <span className="text-white font-bold">
+      {children}
+    </span>
   );
 }
