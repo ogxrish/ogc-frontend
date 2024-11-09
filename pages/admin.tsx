@@ -2,6 +2,7 @@ import BasicButton from "@/components/BasicButton";
 import { deposit, getGlobalAccountData, getProgramBalance, initialize, modifyGlobalData, newEpoch, withdraw } from "@/components/chain";
 import StyledInput from "@/components/StyledInput";
 import WalletButton from "@/components/WalletButton";
+import { BN } from "@coral-xyz/anchor";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useEffect, useState } from "react";
 
@@ -17,6 +18,7 @@ export default function Admin() {
     const [depositOgc, setDepositOgc] = useState<number>(0);
     const [withdrawOgc, setWithdrawOgc] = useState<number>(0);
     const [ogcBalance, setOgcBalance] = useState<bigint>(BigInt(0));
+    const [solBalance, setSolBalance] = useState<number>(0);
     useEffect(() => {
         getGlobalAccountData().then((data) => {
             if (data) {
@@ -26,13 +28,14 @@ export default function Admin() {
                     epochEndTime: new Date(data.epochEndTime.toNumber() * 1000),
                     epochLength: data.epochLength.toNumber(),
                     epochLockTime: data.epochLockTime.toNumber(),
-                    rewardPercent: data.rewardPercent.toNumber()
+                    rewardPercent: data.rewardPercent.toNumber(),
+                    feeLamports: data.feeLamports.toNumber(),
                 });
-                console.log(data);
             }
         });
-        getProgramBalance().then(({ ogcBalance }) => {
+        getProgramBalance().then(({ ogcBalance, solBalance }) => {
             setOgcBalance(ogcBalance);
+            setSolBalance(solBalance)
         });
     }, []);
     const onInitialize = async () => {
@@ -60,6 +63,9 @@ export default function Admin() {
         const tx = await withdraw(publicKey, withdrawOgc);
         console.log(tx);
     };
+    const onWithdrawSol = async () => {
+
+    }
 
     return (
         <div className="flex flex-col justify-start items-center gap-2 pt-10">
@@ -121,6 +127,8 @@ export default function Admin() {
                 />
                 <BasicButton onClick={onWithdraw} text="Withdraw OGC" />
             </div>
+            <p>SOL Balance: {solBalance.toString()}</p>
+            <BasicButton onClick={onWithdrawSol} text="Withdraw SOL" />
         </div>
     );
 }

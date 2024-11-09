@@ -66,22 +66,34 @@ export async function withdraw(wallet: PublicKey, amount: number) {
     }).rpc();
     return tx;
 }
-export async function vote(wallet: PublicKey, epoch: number, votes: number[]) {
+export async function vote(wallet: PublicKey, epoch: number, votes: number[], signTransaction: any) {
     const { program, connection } = getProvider();
     const [voteAccountAddress] = PublicKey.findProgramAddressSync(
         [Buffer.from("vote"), wallet.toBuffer(), new BN(epoch).toArrayLike(Buffer, "le", 8)],
         program.programId
     );
     const voteAccount = await connection.getAccountInfo(voteAccountAddress);
+    const voteBNs = votes.map((v) => new BN(v));
+    let tx;
     if (!voteAccount) {
-        const tx = await program.methods.createVoteAccount(new BN(epoch)).accounts({
+        const i = await program.methods.createVoteAccount(new BN(epoch)).accounts({
+            signer: wallet
+        }).instruction();
+        const i2 = await program.methods.vote(new BN(epoch), voteBNs).accounts({
+            signer: wallet
+        }).instruction();
+        const transaction = new Transaction().add(i, i2);
+        const blockhash = await connection.getLatestBlockhash();
+        transaction.recentBlockhash = blockhash.blockhash;
+        transaction.feePayer = wallet;
+        const signed = await signTransaction(transaction);
+        const tx = await connection.sendRawTransaction(signed.serialize());
+    } else {
+        tx = await program.methods.vote(new BN(epoch), voteBNs).accounts({
             signer: wallet
         }).rpc();
     }
-    const voteBNs = votes.map((v) => new BN(v));
-    const tx = await program.methods.vote(new BN(epoch), voteBNs).accounts({
-        signer: wallet
-    }).rpc();
+
     return tx;
 }
 export async function lock(wallet: PublicKey, epoch: number, amount: number, signTransaction: (t: any) => any) {
@@ -221,14 +233,21 @@ export async function getProgramBalance() {
         [Buffer.from("holder")],
         program.programId
     );
+    const [programAuthorityAddress] = PublicKey.findProgramAddressSync(
+        [Buffer.from("auth")],
+        program.programId
+    )
     try {
         const programHolderAccount = await getAccount(connection, programHolderAddress);
+        const programAuthority = await connection.getAccountInfo(programAuthorityAddress);
         return {
-            ogcBalance: programHolderAccount.amount
+            ogcBalance: programHolderAccount.amount,
+            solBalance: programAuthority?.lamports || 0
         };
     } catch (e) {
         return {
-            ogcBalance: BigInt(0)
+            ogcBalance: BigInt(0),
+            solBalance: 0
         };
     }
 }
@@ -281,7 +300,10 @@ export async function getEpochVotes(epoch: number) {
         program.programId
     );
     const epochAccount = await program.account.epochAccount.fetch(epochAccountAddress);
-    return epochAccount.fields;
+    return { epochVotes: epochAccount.fields, totalVotes: epochAccount.voters };
+}
+export function calculateVoteCost(n: BN, feeLamports: BN) {
+   return n.pow(new BN(2)).mul(feeLamports)
 }
 export async function getMyVote(wallet: PublicKey, epoch: number) {
     const { program } = getProvider();

@@ -1,5 +1,5 @@
 {
-  "address": "6S1yfBGPfxHt1jjiGyGFjFkyHVbx7VUcGmrX4RbWqwyS",
+  "address": "32SZkjb4rzKiBnYyFNhrqhcxyUiNngrD448k7DTuV8CF",
   "metadata": {
     "name": "ogc_reserve",
     "version": "0.1.0",
@@ -1207,7 +1207,7 @@
           "type": {
             "array": [
               "u64",
-              16
+              4
             ]
           }
         }
@@ -1462,7 +1462,7 @@
             "type": {
               "array": [
                 "u64",
-                16
+                4
               ]
             }
           },
@@ -1603,7 +1603,7 @@
             "type": {
               "array": [
                 "u64",
-                16
+                4
               ]
             }
           }

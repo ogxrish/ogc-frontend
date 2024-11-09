@@ -1,6 +1,6 @@
 import BasicButton from "@/components/BasicButton";
 import BigText from "@/components/BigText";
-import { claim, getClaimable, getEpochVotes, getGlobalAccountData, getLockStatus, getMyVote, getProgramBalance, getUnlockStatus, lock, newEpoch, ogcDecimals, oggDecimals, unlock, vote } from "@/components/chain";
+import { calculateVoteCost, claim, getClaimable, getEpochVotes, getGlobalAccountData, getLockStatus, getMyVote, getProgramBalance, getUnlockStatus, lock, newEpoch, ogcDecimals, oggDecimals, unlock, vote } from "@/components/chain";
 import Chart from "@/components/Chart";
 import Countdown from "@/components/Countdown";
 import LeaderboardRow from "@/components/LeaderboardRow";
@@ -27,9 +27,10 @@ export default function Home() {
   const [failedTransaction, setFailedTransaction] = useState<boolean>(false);
   const [sendingTransaction, setSendingTransaction] = useState<boolean>(false);
   const [maxBalance, setMaxBalance] = useState<number>(DEFAULT_MAX);
-  const [baseCount, setBaseCount] = useState<number[]>(Array.from({ length: 16 }).map(() => 0));
-  const [voteCount, setVoteCount] = useState<number[]>(Array.from({ length: 16 }).map(() => 0));
-  const [myVote, setMyVote] = useState<number[]>(Array.from({length: 16}).map(() => 0));
+  const [baseCount, setBaseCount] = useState<number[]>(Array.from({ length: 4 }).map(() => 0));
+  const [voteCount, setVoteCount] = useState<number[]>(Array.from({ length: 4 }).map(() => 0));
+  const [voteCost, setVoteCost] = useState<BN>(new BN(0));
+  const [myVote, setMyVote] = useState<number[]>(Array.from({length: 4}).map(() => 0));
   const [voteAmount, setVoteAmount] = useState<BN>(new BN(0));
   const [lockAmount, setLockAmount] = useState<number>(0);
   const [unlockableOgg, setUnlockableOgg] = useState<number>(0);
@@ -58,6 +59,7 @@ export default function Home() {
   }, [state]);
   useEffect(() => {
     (async () => {
+      return;
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/ogc-data`);
       const json = await response.json();
       console.log(json);
@@ -85,7 +87,8 @@ export default function Home() {
         epochEndTime: new Date(end),
         epochLength: data.epochLength.toNumber(),
         epochLockTime: data.epochLockTime.toNumber(),
-        rewardPercent: data.rewardPercent.toNumber()
+        rewardPercent: data.rewardPercent.toNumber(),
+        feeLamports: data.feeLamports
       });
       setTimeLeft(end - Date.now());
       setOgcReward(new BN(ogcBalance.toString()).mul(data.rewardPercent).div(new BN(100)));
@@ -104,7 +107,9 @@ export default function Home() {
         setUnlockableOgg(amount.toString());
       });
       getMyVote(publicKey, globalAccount.epoch).then(async (fields) => {
-        const epochVotes = await getEpochVotes(globalAccount.epoch);
+        const { epochVotes, totalVotes } = await getEpochVotes(globalAccount.epoch);
+        const cost = calculateVoteCost(totalVotes, globalAccount.feeLamports);
+        setVoteCost(cost);
         if (fields) {
           let voteAmount = new BN(0)
           const baseCount = epochVotes.map((vote: BN, i: number) => {
@@ -154,7 +159,7 @@ export default function Home() {
     if (!publicKey || !globalAccount) return;
     try {
       setSendingTransaction(true);
-      const tx = await vote(publicKey, globalAccount.epoch, voteCount);
+      const tx = await vote(publicKey, globalAccount.epoch, voteCount, signTransaction);
       console.log(tx);
       setSucceededTransaction(true);
     } catch (e) {
@@ -297,10 +302,10 @@ export default function Home() {
                   <>
                     <div className="flex flex-col justify-center items-center gap-4">
                       <LoadedText start="Your available (locked) $OGG" value={availableOgg.sub(voteAmount).toString()} />
+                      <LoadedText start="$SOL Vote Cost" value={voteCost?.toString()} />
                       <LoadedText start="$OGC Epoch Reward" value={ogcReward?.toString()} />
-                      {/* <p className={`${voted ? "opacity-30" : ""}`}>Available OGG: {availableOgg.toString()}</p> */}
                       <div className="grid grid-cols-4 gap-2">
-                        {Array.from({ length: 16 }).map((_, i) =>
+                        {Array.from({ length: 4 }).map((_, i) =>
                           <div key={i}>
                             <PoolWidget
                               title={`Slot ${i}`}
@@ -310,7 +315,7 @@ export default function Home() {
                               addAmount={voteCount[i]}
                               onChangeAddAmount={(n: number) => onChangeAddAmount(i, n)}
                               addDisabled={availableOgg.sub(voteAmount).eq(new BN(0)) || availableOgg <= 0}
-                              subtractDisabled={availableOgg.sub(voteAmount).eq(new BN(0)) || voteCount[i] === 0}
+                              subtractDisabled={voteCount[i] === 0}
                             />
                           </div>
                         )}
