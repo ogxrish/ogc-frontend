@@ -16,7 +16,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
 const DEFAULT_MAX: number = 10000;
-//
+const names: string[] = ["Alpha", "Beta", "Gamma", "Delta"];
 type ViewState = "INFO" | "LOCK" | "STAKE" | "CLAIM" | "STATS";
 export default function Home() {
   const { publicKey, signTransaction } = useWallet();
@@ -309,7 +309,7 @@ export default function Home() {
                         {Array.from({ length: 4 }).map((_, i) =>
                           <div key={i}>
                             <PoolWidget
-                              title={`Slot ${i}`}
+                              title={names[i]}
                               percent={baseCount[i] / maxBalance * 100}
                               voted={myVote[i] / maxBalance * 100}
                               added={voteCount[i] / maxBalance * 100}
@@ -321,10 +321,10 @@ export default function Home() {
                           </div>
                         )}
                       </div>
-                      {timeLeft < 0 && false ?
+                      {timeLeft < 0 ?
                         <BasicButton text="New Epoch" onClick={onNewEpoch} />
                         :
-                        <BasicButton text="Vote" onClick={onVote} disabled={availableOgg.sub(voteAmount).eq(new BN(0))} disabledText={availableOgg.sub(voteAmount).eq(new BN(0)) ? "You have already voted" : "No stake allocated"} />
+                        <BasicButton text="Vote" onClick={onVote} disabled={availableOgg.sub(voteAmount).eq(new BN(0))} disabledText={availableOgg.sub(voteAmount).eq(new BN(0)) ? "You have reserved all your $OGG" : "No Reserve allocated"} />
                       }
                     </div>
                   </>
