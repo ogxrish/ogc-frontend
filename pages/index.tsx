@@ -16,6 +16,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
 const DEFAULT_MAX: number = 10000;
+//
 type ViewState = "INFO" | "LOCK" | "STAKE" | "CLAIM" | "STATS";
 export default function Home() {
   const { publicKey, signTransaction } = useWallet();
