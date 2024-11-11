@@ -80,17 +80,17 @@ export default function Home() {
   }, []);
   useEffect(() => {
     getGlobalAccountData().then(async (data) => {
-      const end = data.epochEndTime.toNumber() * 1000;
+      const end = data.epochEndTime.toNumber();
       const { ogcBalance } = await getProgramBalance();
       setGlobalAccount({
         epoch: data.epoch.toNumber(),
-        epochEndTime: new Date(end),
+        epochEndTime: new Date(end * 1000),
         epochLength: data.epochLength.toNumber(),
         epochLockTime: data.epochLockTime.toNumber(),
         rewardPercent: data.rewardPercent.toNumber(),
         feeLamports: data.feeLamports
       });
-      setTimeLeft(end - Date.now());
+      setTimeLeft(end - Date.now() / 1000);
       setOgcReward(new BN(ogcBalance.toString()).mul(data.rewardPercent).div(new BN(100)));
     });
   }, []);
@@ -253,7 +253,7 @@ export default function Home() {
           <BasicButton onClick={() => setState("STATS")} text="Stats" disabled={state === "STATS"} />
         </div>
 
-        <div className="flex flex-col gap-2 justify-start overflow-y-auto items-center h-full w-full border-white border-2 rounded-lg p-4">
+        <div className="flex flex-col gap-2 justify-start overflow-y-auto items-center h-full w-full border-white border-2 rounded-lg p-4 bg-black">
           <div className="flex flex-col justify-start items-center overflow-y-auto w-full h-full">
             {state === "INFO" ?
               <div className="flex flex-col justify-between items-center text-center w-full h-full">
