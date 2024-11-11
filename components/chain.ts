@@ -352,3 +352,23 @@ export async function getClaimable(wallet: PublicKey, epoch: number) {
         epochs
     };
 }
+export function bnMax(...bns: BN[]) {
+    if (bns.length === 0) throw new Error("Length 0");
+    let max = bns[0]
+    for (const bn of bns) {
+        if (bn.gt(max)) {
+            max = bn;
+        }
+    }
+    return max;
+}
+export function bnMin(...bns: BN[]) {
+    if (bns.length === 0) throw new Error("Length 0");
+    let min = bns[0];
+    for (const bn of bns) {
+        if (bn.lt(min)) {
+            min = bn
+        }
+    }
+    return min;
+}

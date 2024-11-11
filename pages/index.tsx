@@ -1,6 +1,6 @@
 import BasicButton from "@/components/BasicButton";
 import BigText from "@/components/BigText";
-import { calculateVoteCost, claim, getClaimable, getEpochVotes, getGlobalAccountData, getLockStatus, getMyVote, getProgramBalance, getUnlockStatus, lock, newEpoch, ogcDecimals, oggDecimals, unlock, vote } from "@/components/chain";
+import { bnMax, calculateVoteCost, claim, getClaimable, getEpochVotes, getGlobalAccountData, getLockStatus, getMyVote, getProgramBalance, getUnlockStatus, lock, newEpoch, ogcDecimals, oggDecimals, unlock, vote } from "@/components/chain";
 import Chart from "@/components/Chart";
 import Countdown from "@/components/Countdown";
 import LeaderboardRow from "@/components/LeaderboardRow";
@@ -15,7 +15,8 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
-const DEFAULT_MAX: number = 10000;
+const DEFAULT_MAX: number = new BN(10000);
+const HUNDRED: BN = new BN(100)
 const names: string[] = ["Alpha", "Beta", "Gamma", "Delta"];
 type ViewState = "INFO" | "LOCK" | "STAKE" | "CLAIM" | "STATS";
 export default function Home() {
@@ -27,11 +28,11 @@ export default function Home() {
   const [succeededTransaction, setSucceededTransaction] = useState<boolean>(false);
   const [failedTransaction, setFailedTransaction] = useState<boolean>(false);
   const [sendingTransaction, setSendingTransaction] = useState<boolean>(false);
-  const [maxBalance, setMaxBalance] = useState<number>(DEFAULT_MAX);
-  const [baseCount, setBaseCount] = useState<number[]>(Array.from({ length: 4 }).map(() => 0));
-  const [voteCount, setVoteCount] = useState<number[]>(Array.from({ length: 4 }).map(() => 0));
+  const [maxBalance, setMaxBalance] = useState<BN>(DEFAULT_MAX);
+  const [baseCount, setBaseCount] = useState<BN[]>(Array.from({ length: 4 }).map(() => new BN(0)));
+  const [voteCount, setVoteCount] = useState<BN[]>(Array.from({ length: 4 }).map(() => new BN(0)));
   const [voteCost, setVoteCost] = useState<BN>(new BN(0));
-  const [myVote, setMyVote] = useState<number[]>(Array.from({length: 4}).map(() => 0));
+  const [myVote, setMyVote] = useState<BN[]>(Array.from({length: 4}).map(() => new BN(0)));
   const [voteAmount, setVoteAmount] = useState<BN>(new BN(0));
   const [lockAmount, setLockAmount] = useState<number>(0);
   const [unlockableOgg, setUnlockableOgg] = useState<number>(0);
@@ -109,6 +110,8 @@ export default function Home() {
       });
       getMyVote(publicKey, globalAccount.epoch).then(async (fields) => {
         const { epochVotes, totalVotes } = await getEpochVotes(globalAccount.epoch);
+        const summedVotes = bnMax(...epochVotes);
+        setMaxBalance(bnMax(summedVotes, DEFAULT_MAX))
         const cost = calculateVoteCost(totalVotes, globalAccount.feeLamports);
         setVoteCost(cost);
         if (fields) {
@@ -117,11 +120,11 @@ export default function Home() {
             voteAmount = voteAmount.add(vote);
             return vote.sub(fields[i]);
           });
-          setBaseCount(baseCount.map((b: BN) => b.toNumber()));
-          setMyVote(fields.map((b: BN) => b.toNumber()));
+          setBaseCount(baseCount.map((b: BN) => b));
+          setMyVote(fields.map((b: BN) => b));
           setVoteAmount(voteAmount)
         } else {
-          setBaseCount(epochVotes.map((b: BN) => b.toNumber()));
+          setBaseCount(epochVotes.map((b: BN) => b));
         }
       });
       getClaimable(publicKey, globalAccount.epoch).then(({ reward }) => {
@@ -133,7 +136,17 @@ export default function Home() {
     const newValue = availableOgg.sub(new BN(amount));
     if (newValue.gte(new BN(0))) {
       setAvailableOgg(newValue);
-      setVoteCount(voteCount => voteCount.map((v, ii) => ii === i ? Math.max(v + amount, 0) : v));
+      setVoteCount(voteCount => voteCount.map((v, ii) => {
+        const n = v.add(new BN(amount));
+        if (n.gt(maxBalance)) {
+          setMaxBalance(n);
+        }
+        if (ii === i) {
+          return bnMax(n, new BN(0));
+        } else {
+          return v;
+        }
+      }))
     }
   };
   const onClaim = async () => {
@@ -310,10 +323,10 @@ export default function Home() {
                           <div key={i}>
                             <PoolWidget
                               title={names[i]}
-                              percent={baseCount[i] / maxBalance * 100}
-                              voted={myVote[i] / maxBalance * 100}
-                              added={voteCount[i] / maxBalance * 100}
-                              addAmount={voteCount[i]}
+                              percent={baseCount[i].mul(HUNDRED).div(maxBalance).toNumber()}
+                              voted={myVote[i].mul(HUNDRED).div(maxBalance).toNumber()}
+                              added={voteCount[i].mul(HUNDRED).div(maxBalance).toNumber()}
+                              addAmount={voteCount[i].toNumber()}
                               onChangeAddAmount={(n: number) => onChangeAddAmount(i, n)}
                               addDisabled={availableOgg.sub(voteAmount).eq(new BN(0)) || availableOgg <= 0}
                               subtractDisabled={voteCount[i] === 0}
