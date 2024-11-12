@@ -149,20 +149,25 @@ export async function lock(wallet: PublicKey, epoch: number, amount: number, sig
 export async function unlock(wallet: PublicKey, epoch: number, amount: number, signTransaction: (t: any) => any) {
     const { program, provider } = getProvider();
     let { accounts } = await getUnlockStatus(wallet, epoch);
+    const signerTokenAccount = getAssociatedTokenAddressSync(oggMint, wallet);
     let instructions: TransactionInstruction[] = [];
     let amountBN = new BN(amount);
     let index = 0;
     while (amountBN.gte(new BN(0)) && index < accounts.length) {
         const min = amountBN.lt(accounts[index].account.amount) ? amountBN : accounts[index].account.amount;
-        const ix = await program.methods.unlock().accounts().transaction();
+        const ix = await program.methods.unlock(accounts[index].account.epoch, min).accounts({
+            signer: wallet,
+            signerTokenAccount,
+        }).transaction();
         instructions.push(ix);
         amountBN = amountBN.sub(min);
         index++;
     }
     const sigs: string[] = [];
+    console.log(instructions.length);
     for (let i = 0; i < instructions.length; i += 3) {
         const tx = new Transaction();
-        for (let ii = i; i < i + 3 && i < instructions.length; ii++) {
+        for (let ii = i; i < i + 3 && i < instructions.length && instructions[ii]; ii++) {
             tx.add(instructions[ii]);
         }
         if (tx.instructions.length > 0) {

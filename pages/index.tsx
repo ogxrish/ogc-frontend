@@ -12,6 +12,7 @@ import TransactionPending from "@/components/TransactionPending";
 import TransactionSuccess from "@/components/TransactionSuccess";
 import { BN } from "@coral-xyz/anchor";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
@@ -35,7 +36,7 @@ export default function Home() {
   const [myVote, setMyVote] = useState<BN[]>(Array.from({length: 4}).map(() => new BN(0)));
   const [voteAmount, setVoteAmount] = useState<BN>(new BN(0));
   const [lockAmount, setLockAmount] = useState<number>(0);
-  const [unlockableOgg, setUnlockableOgg] = useState<number>(0);
+  const [unlockableOgg, setUnlockableOgg] = useState<BN>(new BN(0));
   const [unlockAmount, setUnlockAmount] = useState<number>(0);
   const [globalAccount, setGlobalAccount] = useState<any>();
   const [timeLeft, setTimeLeft] = useState<number>(0);
@@ -106,13 +107,13 @@ export default function Home() {
   useEffect(() => {
     if (publicKey && globalAccount) {
       getUnlockStatus(publicKey, globalAccount.epoch).then(({ amount }) => {
-        setUnlockableOgg(amount.toString());
+        setUnlockableOgg(amount);
       });
       getMyVote(publicKey, globalAccount.epoch).then(async (fields) => {
         const { epochVotes, totalVotes } = await getEpochVotes(globalAccount.epoch);
         const summedVotes = bnMax(...epochVotes);
         setMaxBalance(bnMax(summedVotes, DEFAULT_MAX))
-        const cost = calculateVoteCost(totalVotes, globalAccount.feeLamports);
+        const cost = calculateVoteCost(totalVotes, globalAccount.feeLamports).toNumber() / LAMPORTS_PER_SOL;
         setVoteCost(cost);
         if (fields) {
           let voteAmount = new BN(0)
@@ -192,6 +193,7 @@ export default function Home() {
     try {
       setSendingTransaction(true);
       const tx = await lock(publicKey, globalAccount.epoch, lockAmount, signTransaction);
+      setLockedOgg((lockedOgg: any) => lockedOgg.add(new BN(lockAmount)))
       console.log(tx);
       setSucceededTransaction(true);
     } catch (e) {
@@ -209,7 +211,10 @@ export default function Home() {
     if (!publicKey || !signTransaction || !globalAccount) return;
     try {
       setSendingTransaction(true);
+      console.log(globalAccount.epoch.toString());
       const txs = await unlock(publicKey, globalAccount.epoch, unlockAmount, signTransaction);
+      setUnlockableOgg((unlockableOgg: any) => unlockableOgg.sub(new BN(unlockAmount)));
+      setLockedOgg((lockedOgg: any) => lockedOgg.sub(new BN(unlockAmount)));
       console.log(txs);
       setSucceededTransaction(true);
     } catch (e) {
@@ -334,8 +339,8 @@ export default function Home() {
                           </div>
                         )}
                       </div>
-                      {timeLeft < 0 ?
-                        <BasicButton text="New Epoch" onClick={onNewEpoch} />
+                      {timeLeft < 0 && false ?
+                        <BasicButton text="Vote in New Epoch" onClick={onNewEpoch} />
                         :
                         <BasicButton text="Vote" onClick={onVote} disabled={availableOgg.sub(voteAmount).eq(new BN(0))} disabledText={availableOgg.sub(voteAmount).eq(new BN(0)) ? "You have reserved all your $OGG" : "No Reserve allocated"} />
                       }
