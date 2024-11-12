@@ -14,7 +14,7 @@ export default function Admin() {
     const [globalData, setGlobalData] = useState<any>();
     const [epochLength, setEpochLength] = useState<number>(0);
     const [epochLockTime, setEpochLockTime] = useState<number>(0);
-    const [rewardPercent, setRewardPercent] = useState<number>(0);
+    const [rewardAmount, setRewardAmount] = useState<number>(0);
     const [depositOgc, setDepositOgc] = useState<number>(0);
     const [withdrawOgc, setWithdrawOgc] = useState<number>(0);
     const [ogcBalance, setOgcBalance] = useState<bigint>(BigInt(0));
@@ -28,7 +28,7 @@ export default function Admin() {
                     epochEndTime: new Date(data.epochEndTime.toNumber() * 1000),
                     epochLength: data.epochLength.toNumber(),
                     epochLockTime: data.epochLockTime.toNumber(),
-                    rewardPercent: data.rewardPercent.toNumber(),
+                    rewardAmount: data.rewardAmount.toNumber(),
                     feeLamports: data.feeLamports.toNumber(),
                 });
             }
@@ -45,7 +45,7 @@ export default function Admin() {
     };
     const onModifyGlobalData = async () => {
         if (!publicKey) return;
-        const tx = await modifyGlobalData(publicKey, epochLockTime, epochLength, rewardPercent);
+        const tx = await modifyGlobalData(publicKey, epochLockTime, epochLength, rewardAmount);
         console.log(tx);
     };
     const onNewEpoch = async () => {
@@ -76,7 +76,7 @@ export default function Admin() {
             <p>Epoch end time: {globalData?.epochEndTime.toString()}</p>
             <p>Epoch lock time: {globalData?.epochLockTime}</p>
             <p>Epoch length: {globalData?.epochLength}</p>
-            <p>Reward percent: {globalData?.rewardPercent}%</p>
+            <p>Reward Amount: {globalData?.rewardAmount}</p>
             <BasicButton onClick={onNewEpoch} text="New Epoch" />
             <div className="flex flex-row justify-center items-center gap-2">
                 <div className="flex flex-col justify-center items-center gap-2">
@@ -98,12 +98,12 @@ export default function Admin() {
                     />
                 </div>
                 <div className="flex flex-col justify-center items-center gap-2">
-                    <p>Reward Percent</p>
+                    <p>Reward Amount</p>
                     <StyledInput
-                        placeholder="Reward Percent"
+                        placeholder="Reward Amount"
                         type="number"
-                        value={rewardPercent}
-                        onChange={(event: any) => setRewardPercent(Number(event.target.value))}
+                        value={rewardAmount}
+                        onChange={(event: any) => setRewardAmount(Number(event.target.value))}
                     />
                 </div>
             </div>

@@ -89,11 +89,11 @@ export default function Home() {
         epochEndTime: new Date(end * 1000),
         epochLength: data.epochLength.toNumber(),
         epochLockTime: data.epochLockTime.toNumber(),
-        rewardPercent: data.rewardPercent.toNumber(),
+        rewardAmount: data.rewardAmount.toNumber(),
         feeLamports: data.feeLamports
       });
       setTimeLeft(end - Date.now() / 1000);
-      setOgcReward(new BN(ogcBalance.toString()).mul(data.rewardPercent).div(new BN(100)));
+      setOgcReward(data.rewardAmount);
     });
   }, []);
   useEffect(() => {
@@ -146,7 +146,7 @@ export default function Home() {
         } else {
           return v;
         }
-      }))
+      }));
     }
   };
   const onClaim = async () => {
