@@ -83,7 +83,7 @@ export default function Home() {
   useEffect(() => {
     getGlobalAccountData().then(async (data) => {
       const end = data.epochEndTime.toNumber();
-      const { ogcBalance } = await getProgramBalance();
+      // const { ogcBalance } = await getProgramBalance();
       setGlobalAccount({
         epoch: data.epoch.toNumber(),
         epochEndTime: new Date(end * 1000),
@@ -316,8 +316,8 @@ export default function Home() {
                   <>
                     <div className="flex flex-col justify-center items-center gap-4">
                       <LoadedText start="Your available (locked) $OGG" value={availableOgg.sub(voteAmount).toString()} />
-                      <LoadedText start="$SOL Vote Cost" value={voteCost?.toString()} />
-                      <LoadedText start="$OGC Epoch Reward" value={ogcReward?.toString()} />
+                      <LoadedText start="Reserve Cost" value={voteCost ? `${voteCost.toString()} $SOL` : undefined} />
+                      <LoadedText start="Reserve Reward" value={ogcReward ? `${ogcReward.toString()} $OGC` : undefined} />
                       <div className="grid grid-cols-4 gap-2">
                         {Array.from({ length: 4 }).map((_, i) =>
                           <div key={i}>
