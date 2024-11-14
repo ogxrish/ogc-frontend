@@ -1,6 +1,6 @@
 import BasicButton from "@/components/BasicButton";
 import BigText from "@/components/BigText";
-import { bnMax, calculateVoteCost, claim, getClaimable, getEpochVotes, getGlobalAccountData, getLockStatus, getMyVote, getProgramBalance, getUnlockStatus, lock, newEpoch, ogcDecimals, oggDecimals, unlock, vote } from "@/components/chain";
+import { bnMax, calculateVoteCost, claim, getClaimable, getEpochVotes, getGlobalAccountData, getLockStatus, getMyVote, getProgramBalance, getUnlockStatus, jupQuote, lock, newEpoch, ogcDecimals, oggDecimals, unlock, vote } from "@/components/chain";
 import Chart from "@/components/Chart";
 import Countdown from "@/components/Countdown";
 import LeaderboardRow from "@/components/LeaderboardRow";
@@ -41,6 +41,8 @@ export default function Home() {
   const [globalAccount, setGlobalAccount] = useState<any>();
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [ogcReward, setOgcReward] = useState<BN>();
+  const [voteCostUSD, setVoteCostUSD] = useState<string>();
+  const [voteRewardUSD, setVoteRewardUSD] = useState<string>();
   const [totalUnlockableOgg, setTotalUnlockableOgg] = useState<string>();
   const [totalLockedOgg, setTotalLockedOgg] = useState<string>();
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
@@ -114,6 +116,10 @@ export default function Home() {
         const summedVotes = bnMax(...epochVotes);
         setMaxBalance(bnMax(summedVotes, DEFAULT_MAX))
         const cost = calculateVoteCost(totalVotes, globalAccount.feeLamports).toNumber() / LAMPORTS_PER_SOL;
+        const solQuote = await jupQuote("So11111111111111111111111111111111111111112", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", cost * LAMPORTS_PER_SOL);
+        setVoteCostUSD((solQuote.outAmount / 10 ** 6).toFixed(2))
+        const ogcQuote = await jupQuote("DH5JRsRyu3RJnxXYBiZUJcwQ9Fkb562ebwUsufpZhy45", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", globalAccount.rewardAmount);
+        setVoteRewardUSD((ogcQuote.outAmount / 10 ** 6).toFixed(2));
         setVoteCost(cost);
         if (fields) {
           let voteAmount = new BN(0)
@@ -322,9 +328,8 @@ export default function Home() {
                 state === "STAKE" ?
                   <>
                     <div className="flex flex-col justify-center items-center gap-4">
-                      <LoadedText start="Your available (locked) $OGG" value={availableOgg.sub(voteAmount).toString()} />
-                      <LoadedText start="Reserve Cost" value={voteCost !== undefined ? `${voteCost.toString()} $SOL` : undefined} />
-                      <LoadedText start="Reserve Reward" value={ogcReward !== undefined ? `${ogcReward.toString()} $OGC` : undefined} />
+                      <LoadedText start="Reserve Cost" value={voteCost !== undefined ? `${voteCost.toString()} $SOL | ${voteCostUSD} $USDC` : undefined} />
+                      <LoadedText start="Reserve Reward" value={ogcReward !== undefined ? `${ogcReward.toString()} $OGC | ${voteRewardUSD} $USDC` : undefined} />
                       <div className="grid grid-cols-4 gap-2">
                         {Array.from({ length: 4 }).map((_, i) =>
                           <div key={i}>
@@ -342,6 +347,7 @@ export default function Home() {
                           </div>
                         )}
                       </div>
+                      <LoadedText start="Your available $OGG" value={availableOgg.sub(voteAmount).toString()} />
                       {timeLeft < 0 && false ?
                         <BasicButton text="Vote in New Epoch" onClick={onNewEpoch} />
                         :

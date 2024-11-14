@@ -377,3 +377,9 @@ export function bnMin(...bns: BN[]) {
     }
     return min;
 }
+export async function jupQuote(from: string, to: string, amount: number) {
+    const quoteResponse = await (
+        await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=${from}&outputMint=${to}&amount=${amount}&slippageBps=50`)
+    ).json();
+    return quoteResponse;
+}
