@@ -1,5 +1,5 @@
 {
-  "address": "AsSVm8CNrUmEAwwgDNvpeRkpqbxJQARgXU4ycYQXkQma",
+  "address": "ARsa3imXk6w5xDNUNAmwFKhYsrNHfAJKW23LYnwgsy46",
   "metadata": {
     "name": "ogc_reserve",
     "version": "0.1.0",
@@ -1139,6 +1139,7 @@
         },
         {
           "name": "user_data_account",
+          "writable": true,
           "pda": {
             "seeds": [
               {

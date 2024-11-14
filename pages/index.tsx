@@ -321,8 +321,8 @@ export default function Home() {
                   <>
                     <div className="flex flex-col justify-center items-center gap-4">
                       <LoadedText start="Your available (locked) $OGG" value={availableOgg.sub(voteAmount).toString()} />
-                      <LoadedText start="Reserve Cost" value={voteCost ? `${voteCost.toString()} $SOL` : undefined} />
-                      <LoadedText start="Reserve Reward" value={ogcReward ? `${ogcReward.toString()} $OGC` : undefined} />
+                      <LoadedText start="Reserve Cost" value={voteCost !== undefined ? `${voteCost.toString()} $SOL` : undefined} />
+                      <LoadedText start="Reserve Reward" value={ogcReward !== undefined ? `${ogcReward.toString()} $OGC` : undefined} />
                       <div className="grid grid-cols-4 gap-2">
                         {Array.from({ length: 4 }).map((_, i) =>
                           <div key={i}>
@@ -334,7 +334,7 @@ export default function Home() {
                               addAmount={voteCount[i].toNumber()}
                               onChangeAddAmount={(n: number) => onChangeAddAmount(i, n)}
                               addDisabled={availableOgg.sub(voteAmount).eq(new BN(0)) || availableOgg <= 0}
-                              subtractDisabled={voteCount[i] === 0}
+                              subtractDisabled={voteCount[i].eq(new BN(0))}
                             />
                           </div>
                         )}

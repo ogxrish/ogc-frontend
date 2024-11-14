@@ -68,7 +68,8 @@ export default function Admin() {
     }
 
     return (
-        <div className="flex flex-col justify-start items-center gap-2 pt-10">
+        <div className="w-full bg-black flex justify-center items-center">
+        <div className="flex flex-col justify-start items-center gap-2 pt-10 w-[60%]">
             <WalletButton />
             <BasicButton onClick={onInitialize} text="Initialize" disabled={initialized} />
             <p>Global data</p>
@@ -129,6 +130,7 @@ export default function Admin() {
             </div>
             <p>SOL Balance: {solBalance.toString()}</p>
             <BasicButton onClick={onWithdrawSol} text="Withdraw SOL" />
+        </div>
         </div>
     );
 }
