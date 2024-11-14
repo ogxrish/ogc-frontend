@@ -117,8 +117,10 @@ export default function Home() {
         setVoteCost(cost);
         if (fields) {
           let voteAmount = new BN(0)
+          for (const field of fields) {
+            voteAmount = voteAmount.add(field);
+          }
           const baseCount = epochVotes.map((vote: BN, i: number) => {
-            voteAmount = voteAmount.add(vote);
             return vote.sub(fields[i]);
           });
           setBaseCount(baseCount.map((b: BN) => b));
@@ -331,6 +333,7 @@ export default function Home() {
                               percent={baseCount[i].mul(HUNDRED).div(maxBalance).toNumber()}
                               voted={myVote[i].mul(HUNDRED).div(maxBalance).toNumber()}
                               added={voteCount[i].mul(HUNDRED).div(maxBalance).toNumber()}
+                              total={baseCount[i].add(voteCount[i]).add(myVote[i])}
                               addAmount={voteCount[i].toNumber()}
                               onChangeAddAmount={(n: number) => onChangeAddAmount(i, n)}
                               addDisabled={availableOgg.sub(voteAmount).eq(new BN(0)) || availableOgg <= 0}
@@ -342,7 +345,7 @@ export default function Home() {
                       {timeLeft < 0 && false ?
                         <BasicButton text="Vote in New Epoch" onClick={onNewEpoch} />
                         :
-                        <BasicButton text="Vote" onClick={onVote} disabled={availableOgg.sub(voteAmount).eq(new BN(0))} disabledText={availableOgg.sub(voteAmount).eq(new BN(0)) ? "You have reserved all your $OGG" : "No Reserve allocated"} />
+                        <BasicButton text="Vote" onClick={onVote} disabled={false} disabledText={availableOgg.sub(voteAmount).eq(new BN(0)) ? "You have reserved all your $OGG" : "No Reserve allocated"} />
                       }
                     </div>
                   </>

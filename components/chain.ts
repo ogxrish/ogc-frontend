@@ -87,13 +87,12 @@ export async function vote(wallet: PublicKey, epoch: number, votes: number[], si
         transaction.recentBlockhash = blockhash.blockhash;
         transaction.feePayer = wallet;
         const signed = await signTransaction(transaction);
-        const tx = await connection.sendRawTransaction(signed.serialize());
+        tx = await connection.sendRawTransaction(signed.serialize());
     } else {
         tx = await program.methods.vote(new BN(epoch), voteBNs).accounts({
             signer: wallet
         }).rpc();
     }
-
     return tx;
 }
 export async function lock(wallet: PublicKey, epoch: number, amount: number, signTransaction: (t: any) => any) {
@@ -305,6 +304,7 @@ export async function getEpochVotes(epoch: number) {
         program.programId
     );
     const epochAccount = await program.account.epochAccount.fetch(epochAccountAddress);
+    console.log(epochAccount.voters.toString());
     return { epochVotes: epochAccount.fields, totalVotes: epochAccount.voters };
 }
 export function calculateVoteCost(n: BN, feeLamports: BN) {
