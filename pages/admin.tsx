@@ -59,12 +59,12 @@ export default function Admin() {
     };
     const onDeposit = async () => {
         if (!publicKey) return;
-        const tx = await deposit(publicKey, depositOgc * 10 ** ogcDecimals);
+        const tx = await deposit(publicKey, new BN(depositOgc).mul(new BN(10 ** ogcDecimals)));
         console.log(tx);
     };
     const onWithdraw = async () => {
         if (!publicKey) return;
-        const tx = await withdraw(publicKey, withdrawOgc * 10 ** ogcDecimals);
+        const tx = await withdraw(publicKey, new BN(withdrawOgc).mul(new BN(10 ** ogcDecimals)));
         console.log(tx);
     };
     const onWithdrawSol = async () => {

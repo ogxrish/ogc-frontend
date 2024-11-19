@@ -48,7 +48,7 @@ export async function modifyGlobalData(wallet: PublicKey, epochLockTime: number,
     }).rpc();
     return tx;
 }
-export async function deposit(wallet: PublicKey, amount: number) {
+export async function deposit(wallet: PublicKey, amount: BN) {
     const { program } = getProvider();
     const signerTokenAccount = getAssociatedTokenAddressSync(ogcMint, wallet);
     const tx = await program.methods.depositOgg(new BN(amount)).accounts({
@@ -57,7 +57,7 @@ export async function deposit(wallet: PublicKey, amount: number) {
     }).rpc();
     return tx;
 }
-export async function withdraw(wallet: PublicKey, amount: number) {
+export async function withdraw(wallet: PublicKey, amount: BN) {
     const { program } = getProvider();
     const signerTokenAccount = getAssociatedTokenAddressSync(ogcMint, wallet);
     const tx = await program.methods.withdrawOgg(new BN(amount)).accounts({
