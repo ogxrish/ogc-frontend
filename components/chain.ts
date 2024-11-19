@@ -5,8 +5,8 @@ import { createAssociatedTokenAccountInstruction, getAccount, getAssociatedToken
 
 const ogcMint = new PublicKey(process.env.NEXT_PUBLIC_OGC_KEY!);
 const oggMint = new PublicKey(process.env.NEXT_PUBLIC_OGG_KEY!);
-export const ogcDecimals = 6;
-export const oggDecimals = 6;
+export const ogcDecimals = process.env.NEXT_PUBLIC_RPC_URL?.includes("devnet") ? 6 : 7;
+export const oggDecimals = process.env.NEXT_PUBLIC_RPC_URL?.includes("devnet") ? 6 : 9;
 function getProvider() {
     const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
     const provider = new AnchorProvider(connection, (window as any).solana, AnchorProvider.defaultOptions());
@@ -73,7 +73,7 @@ export async function vote(wallet: PublicKey, epoch: number, votes: number[], si
         program.programId
     );
     const voteAccount = await connection.getAccountInfo(voteAccountAddress);
-    const voteBNs = votes.map((v) => new BN(v));
+    const voteBNs = votes.map((v) => new BN(v).mul(new BN(10 ** oggDecimals)));
     let tx;
     if (!voteAccount) {
         const i = await program.methods.createVoteAccount(new BN(epoch)).accounts({
@@ -378,8 +378,12 @@ export function bnMin(...bns: BN[]) {
     return min;
 }
 export async function jupQuote(from: string, to: string, amount: number) {
-    const quoteResponse = await (
-        await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=${from}&outputMint=${to}&amount=${amount}&slippageBps=50`)
-    ).json();
-    return quoteResponse;
+    try {
+        const quoteResponse = await (
+            await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=${from}&outputMint=${to}&amount=${amount}&slippageBps=50`)
+        ).json();
+        return quoteResponse;
+    } catch (e) {
+        return { outAmount: 0 }
+    }
 }

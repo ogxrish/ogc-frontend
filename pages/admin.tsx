@@ -1,9 +1,10 @@
 import BasicButton from "@/components/BasicButton";
-import { deposit, getGlobalAccountData, getProgramBalance, initialize, modifyGlobalData, newEpoch, withdraw } from "@/components/chain";
+import { deposit, getGlobalAccountData, getProgramBalance, initialize, modifyGlobalData, newEpoch, ogcDecimals, withdraw } from "@/components/chain";
 import StyledInput from "@/components/StyledInput";
 import WalletButton from "@/components/WalletButton";
 import { BN } from "@coral-xyz/anchor";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { useEffect, useState } from "react";
 
 
@@ -28,14 +29,17 @@ export default function Admin() {
                     epochEndTime: new Date(data.epochEndTime.toNumber() * 1000),
                     epochLength: data.epochLength.toNumber(),
                     epochLockTime: data.epochLockTime.toNumber(),
-                    rewardAmount: data.rewardAmount.toNumber(),
+                    rewardAmount: data.rewardAmount.div(new BN(10 ** ogcDecimals)).toNumber(),
                     feeLamports: data.feeLamports.toNumber(),
                 });
+                setRewardAmount(data.rewardAmount.div(new BN(10 ** ogcDecimals)).toNumber());
+                setEpochLength(data.epochLength.toNumber());
+                setEpochLockTime(data.epochLockTime.toNumber());
             }
         });
         getProgramBalance().then(({ ogcBalance, solBalance }) => {
-            setOgcBalance(ogcBalance);
-            setSolBalance(solBalance)
+            setOgcBalance(ogcBalance / (BigInt(10 ** ogcDecimals)));
+            setSolBalance(solBalance / LAMPORTS_PER_SOL);
         });
     }, []);
     const onInitialize = async () => {
@@ -45,7 +49,7 @@ export default function Admin() {
     };
     const onModifyGlobalData = async () => {
         if (!publicKey) return;
-        const tx = await modifyGlobalData(publicKey, epochLockTime, epochLength, rewardAmount);
+        const tx = await modifyGlobalData(publicKey, epochLockTime, epochLength, rewardAmount * 10 ** ogcDecimals);
         console.log(tx);
     };
     const onNewEpoch = async () => {
@@ -55,12 +59,12 @@ export default function Admin() {
     };
     const onDeposit = async () => {
         if (!publicKey) return;
-        const tx = await deposit(publicKey, depositOgc);
+        const tx = await deposit(publicKey, depositOgc * 10 ** ogcDecimals);
         console.log(tx);
     };
     const onWithdraw = async () => {
         if (!publicKey) return;
-        const tx = await withdraw(publicKey, withdrawOgc);
+        const tx = await withdraw(publicKey, withdrawOgc * 10 ** ogcDecimals);
         console.log(tx);
     };
     const onWithdrawSol = async () => {

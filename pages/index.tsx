@@ -102,7 +102,8 @@ export default function Home() {
   useEffect(() => {
     if (!publicKey) return;
     getLockStatus(publicKey).then((locked) => {
-      setAvailableOgg(locked);
+      const oggFactor = new BN(10 ** oggDecimals)
+      setAvailableOgg(locked.div(oggFactor));
       setLockedOgg(locked);
     });
   }, [publicKey]);
@@ -113,7 +114,8 @@ export default function Home() {
       });
       getMyVote(publicKey, globalAccount.epoch).then(async (fields) => {
         const { epochVotes, totalVotes } = await getEpochVotes(globalAccount.epoch);
-        const summedVotes = bnMax(...epochVotes);
+        const oggFactor = new BN(10 ** oggDecimals)
+        const summedVotes = bnMax(...epochVotes).div(oggFactor);
         setMaxBalance(bnMax(summedVotes, DEFAULT_MAX))
         const cost = calculateVoteCost(totalVotes, globalAccount.feeLamports).toNumber() / LAMPORTS_PER_SOL;
         const solQuote = await jupQuote("So11111111111111111111111111111111111111112", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", cost * LAMPORTS_PER_SOL);
@@ -129,11 +131,11 @@ export default function Home() {
           const baseCount = epochVotes.map((vote: BN, i: number) => {
             return vote.sub(fields[i]);
           });
-          setBaseCount(baseCount.map((b: BN) => b));
-          setMyVote(fields.map((b: BN) => b));
-          setVoteAmount(voteAmount)
+          setBaseCount(baseCount.map((b: BN) => b.div(oggFactor)));
+          setMyVote(fields.map((b: BN) => b.div(oggFactor)));
+          setVoteAmount(voteAmount.div(oggFactor))
         } else {
-          setBaseCount(epochVotes.map((b: BN) => b));
+          setBaseCount(epochVotes.map((b: BN) => b.div(oggFactor)));
         }
       });
       getClaimable(publicKey, globalAccount.epoch).then(({ reward }) => {
@@ -200,7 +202,7 @@ export default function Home() {
     if (!publicKey || !signTransaction || !globalAccount) return;
     try {
       setSendingTransaction(true);
-      const tx = await lock(publicKey, globalAccount.epoch, lockAmount, signTransaction);
+      const tx = await lock(publicKey, globalAccount.epoch, lockAmount * 10 ** oggDecimals, signTransaction);
       setLockedOgg((lockedOgg: any) => lockedOgg.add(new BN(lockAmount)))
       console.log(tx);
       setSucceededTransaction(true);
@@ -220,7 +222,7 @@ export default function Home() {
     try {
       setSendingTransaction(true);
       console.log(globalAccount.epoch.toString());
-      const txs = await unlock(publicKey, globalAccount.epoch, unlockAmount, signTransaction);
+      const txs = await unlock(publicKey, globalAccount.epoch, unlockAmount * 10 ** oggDecimals, signTransaction);
       setUnlockableOgg((unlockableOgg: any) => unlockableOgg.sub(new BN(unlockAmount)));
       setLockedOgg((lockedOgg: any) => lockedOgg.sub(new BN(unlockAmount)));
       console.log(txs);
@@ -299,7 +301,7 @@ export default function Home() {
                   <LoadedText start="Total Unlockable $OGG" value={totalUnlockableOgg} />
                   <div className="flex flex-row justify-center items-center w-full gap-10">
                     <div>
-                      <BigText text="Locked $OGG" number={lockedOgg.toString()} />
+                      <BigText text="Locked $OGG" number={lockedOgg.div(new BN(10 ** oggDecimals)).toString()} />
                       <div className="flex flex-row justify-center items-center gap-2 mt-2">
                         <StyledInput
                           placeholder="To lock"
@@ -311,7 +313,7 @@ export default function Home() {
                       </div>
                     </div>
                     <div>
-                      <BigText text="Unlockable $OGG" number={unlockableOgg.toString()} />
+                      <BigText text="Unlockable $OGG" number={unlockableOgg.div(new BN(10 ** oggDecimals)).toString()} />
                       <div className="flex flex-row justify-center items-center gap-2 mt-2">
                         <StyledInput
                           placeholder="To unlock"
@@ -329,7 +331,7 @@ export default function Home() {
                   <>
                     <div className="flex flex-col justify-center items-center gap-4">
                       <LoadedText start="Reserve Cost" value={voteCost !== undefined ? `${voteCost.toString()} $SOL | ${voteCostUSD} $USDC` : undefined} />
-                      <LoadedText start="Reserve Reward" value={ogcReward !== undefined ? `${ogcReward.toString()} $OGC | ${voteRewardUSD} $USDC` : undefined} />
+                      <LoadedText start="Reserve Reward" value={ogcReward !== undefined ? `${ogcReward.div(new BN(10 ** ogcDecimals)).toString()} $OGC | ${voteRewardUSD} $USDC` : undefined} />
                       <div className="grid grid-cols-4 gap-2">
                         {Array.from({ length: 4 }).map((_, i) =>
                           <div key={i}>
@@ -358,7 +360,7 @@ export default function Home() {
                   :
                   state === "CLAIM" ?
                     <div className="flex flex-col justify-center items-center w-[50%] h-full gap-10">
-                      <BigText text="Claimable $OGC" number={claimableOgc.toString()} />
+                      <BigText text="Claimable $OGC" number={claimableOgc.div(new BN(10 ** ogcDecimals)).toString()} />
                       <BasicButton onClick={onClaim} text="Claim" disabled={claimableOgc.eq(new BN(0))} disabledText="No OGC to claim" />
                     </div>
                     :
