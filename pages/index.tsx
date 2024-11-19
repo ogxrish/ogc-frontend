@@ -117,7 +117,8 @@ export default function Home() {
         const { epochVotes, totalVotes } = await getEpochVotes(globalAccount.epoch);
         const oggFactor = new BN(10 ** oggDecimals)
         const summedVotes = bnMax(...epochVotes).div(oggFactor);
-        setMaxBalance(bnMax(summedVotes, DEFAULT_MAX))
+        console.log(summedVotes.toString(), DEFAULT_MAX.toString());
+        setMaxBalance(bnMax(summedVotes, DEFAULT_MAX).mul(new BN(4)))
         const cost = calculateVoteCost(totalVotes, globalAccount.feeLamports).toNumber() / LAMPORTS_PER_SOL;
         const solQuote = await jupQuote("So11111111111111111111111111111111111111112", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", cost * LAMPORTS_PER_SOL);
         setVoteCostUSD((solQuote.outAmount / 10 ** 6).toFixed(2))
