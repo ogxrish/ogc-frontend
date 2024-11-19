@@ -64,6 +64,7 @@ export default function Home() {
   }, [state]);
   useEffect(() => {
     (async () => {
+
       return;
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/ogc-data`);
       const json = await response.json();
@@ -330,8 +331,8 @@ export default function Home() {
                 state === "STAKE" ?
                   <>
                     <div className="flex flex-col justify-center items-center gap-4">
-                      <LoadedText start="Reserve Cost" value={voteCost !== undefined ? `${voteCost.toString()} $SOL | ${voteCostUSD} $USDC` : undefined} />
-                      <LoadedText start="Reserve Reward" value={ogcReward !== undefined ? `${ogcReward.div(new BN(10 ** ogcDecimals)).toString()} $OGC | ${voteRewardUSD} $USDC` : undefined} />
+                      <LoadedText start="Reserve Cost" value={voteCost !== undefined ? `${voteCost.toString()} $SOL | ${Number.isNaN(Number(voteCostUSD)) ? Number(0).toFixed(2) : voteCostUSD} $USDC` : ""} />
+                      <LoadedText start="Reserve Reward" value={ogcReward !== undefined ? `${ogcReward.div(new BN(10 ** ogcDecimals)).toString()} $OGC | ${Number.isNaN(voteRewardUSD) ? 0 : voteRewardUSD} $USDC` : ""} />
                       <div className="grid grid-cols-4 gap-2">
                         {Array.from({ length: 4 }).map((_, i) =>
                           <div key={i}>
