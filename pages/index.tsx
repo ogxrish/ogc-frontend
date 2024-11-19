@@ -15,7 +15,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-
+//
 const DEFAULT_MAX: number = new BN(10000);
 const HUNDRED: BN = new BN(100)
 const names: string[] = ["Alpha", "Beta", "Gamma", "Delta"];
