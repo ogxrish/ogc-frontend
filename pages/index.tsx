@@ -346,6 +346,7 @@ export default function Home() {
                               onChangeAddAmount={(n: number) => onChangeAddAmount(i, n)}
                               addDisabled={availableOgg.sub(voteAmount).eq(new BN(0)) || availableOgg <= 0}
                               subtractDisabled={voteCount[i].eq(new BN(0))}
+                              available={availableOgg.toNumber()}
                             />
                           </div>
                         )}
