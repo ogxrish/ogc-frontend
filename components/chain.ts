@@ -49,7 +49,6 @@ export async function modifyGlobalData(wallet: PublicKey, epochLockTime: number,
     return tx;
 }
 export async function deposit(wallet: PublicKey, amount: BN) {
-    return;
     const { program } = getProvider();
     const signerTokenAccount = getAssociatedTokenAddressSync(ogcMint, wallet);
     const tx = await program.methods.depositOgg(new BN(amount)).accounts({
@@ -97,6 +96,7 @@ export async function vote(wallet: PublicKey, epoch: number, votes: number[], si
     return tx;
 }
 export async function lock(wallet: PublicKey, epoch: number, amount: number, signTransaction: (t: any) => any) {
+    return;
     const { program, connection } = getProvider();
     const transaction = new Transaction();
     const signerTokenAccount = getAssociatedTokenAddressSync(oggMint, wallet);
