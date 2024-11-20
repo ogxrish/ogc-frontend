@@ -311,7 +311,7 @@ export default function Home() {
                   <LoadedText start="Total Locked $OGG" value={totalLockedOgg} />
                   <LoadedText start="Total Unlockable $OGG" value={totalUnlockableOgg} />
                   <div className="flex flex-row justify-start items-center w-full gap-10 overflow-x-auto">
-                  <div>
+                  <div className="flex flex-col justify-center items-center gap-2">
                     <BigText text="Reclaimable $OGG" number={reclaimableOgg.div(new BN(10 ** oggDecimals)).toString()} />
                     <BasicButton onClick={onReclaim} text="Reclaim" disabled={!canClaim} disabledText="Reclaim opens soon" />
                   </div>

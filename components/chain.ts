@@ -147,7 +147,6 @@ export async function vote(wallet: PublicKey, epoch: number, votes: number[], si
     return tx;
 }
 export async function lock(wallet: PublicKey, epoch: number, amount: number, signTransaction: (t: any) => any) {
-    return;
     const { program, connection } = getProvider();
     const transaction = new Transaction();
     const signerTokenAccount = getAssociatedTokenAddressSync(oggMint, wallet);
