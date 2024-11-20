@@ -1,6 +1,6 @@
 import BasicButton from "@/components/BasicButton";
 import BigText from "@/components/BigText";
-import { bnMax, calculateVoteCost, claim, getClaimable, getEpochVotes, getGlobalAccountData, getLockStatus, getMyVote, getProgramBalance, getUnlockStatus, jupQuote, lock, newEpoch, ogcDecimals, oggDecimals, unlock, vote } from "@/components/chain";
+import { bnMax, calculateVoteCost, claim, getClaimable, getEpochVotes, getGlobalAccountData, getLockStatus, getMyVote, getProgramBalance, getReclaimable, getUnlockStatus, jupQuote, lock, newEpoch, ogcDecimals, oggDecimals, unlock, vote } from "@/components/chain";
 import Chart from "@/components/Chart";
 import Countdown from "@/components/Countdown";
 import LeaderboardRow from "@/components/LeaderboardRow";
@@ -47,7 +47,10 @@ export default function Home() {
   const [totalLockedOgg, setTotalLockedOgg] = useState<string>();
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [chartData, setChartData] = useState<any[]>();
+  const [reclaimableOgg, setReclaimableOgg] = useState<BN>(new BN(0));
+  const [canClaim, setCanClaim] = useState<boolean>(false);
   const router = useRouter();
+
   useEffect(() => {
     if (router && router.isReady) {
       const { state } = router.query;
@@ -107,6 +110,10 @@ export default function Home() {
       setAvailableOgg(locked.div(oggFactor));
       setLockedOgg(locked);
     });
+    getReclaimable(publicKey).then(({ amount, canClaim }) => {
+      setReclaimableOgg(amount)
+      setCanClaim(canClaim)
+    })
   }, [publicKey]);
   useEffect(() => {
     if (publicKey && globalAccount) {
@@ -117,7 +124,6 @@ export default function Home() {
         const { epochVotes, totalVotes } = await getEpochVotes(globalAccount.epoch);
         const oggFactor = new BN(10 ** oggDecimals)
         const summedVotes = bnMax(...epochVotes).div(oggFactor);
-        console.log(summedVotes.toString(), DEFAULT_MAX.toString());
         setMaxBalance(bnMax(summedVotes, DEFAULT_MAX).mul(new BN(4)))
         const cost = calculateVoteCost(totalVotes, globalAccount.feeLamports).toNumber() / LAMPORTS_PER_SOL;
         const solQuote = await jupQuote("So11111111111111111111111111111111111111112", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", cost * LAMPORTS_PER_SOL);
@@ -258,6 +264,9 @@ export default function Home() {
       }, 5000);
     }
   };
+  const onReclaim = async () => {
+
+  }
   return (
     <div className="flex flex-col justify-start items-center w-full h-full">
       {succeededTransaction &&
@@ -301,7 +310,11 @@ export default function Home() {
                 <div className="flex flex-col justify-center gap-10 items-center w-full h-full">
                   <LoadedText start="Total Locked $OGG" value={totalLockedOgg} />
                   <LoadedText start="Total Unlockable $OGG" value={totalUnlockableOgg} />
-                  <div className="flex flex-row justify-center items-center w-full gap-10">
+                  <div className="flex flex-row justify-start items-center w-full gap-10 overflow-x-auto">
+                  <div>
+                    <BigText text="Reclaimable $OGG" number={reclaimableOgg.div(new BN(10 ** oggDecimals)).toString()} />
+                    <BasicButton onClick={onReclaim} text="Reclaim" disabled={!canClaim} disabledText="Reclaim opens soon" />
+                  </div>
                     <div>
                       <BigText text="Locked $OGG" number={lockedOgg.div(new BN(10 ** oggDecimals)).toString()} />
                       <div className="flex flex-row justify-center items-center gap-2 mt-2">

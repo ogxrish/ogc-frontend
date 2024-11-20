@@ -1,6 +1,7 @@
 import { AnchorProvider, BN, Instruction, Program } from "@coral-xyz/anchor";
 import { Connection, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
 import idl from "./ogc_reserve.json";
+import idl_broken from "./ogc_reserve_broken.json";
 import { createAssociatedTokenAccountInstruction, getAccount, getAssociatedTokenAddressSync, getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
 
 const ogcMint = new PublicKey(process.env.NEXT_PUBLIC_OGC_KEY!);
@@ -11,6 +12,12 @@ function getProvider() {
     const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
     const provider = new AnchorProvider(connection, (window as any).solana, AnchorProvider.defaultOptions());
     const program: any = new Program(idl as any, provider);
+    return { connection, provider, program };
+}
+function getBrokenProvider() {
+    const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
+    const provider = new AnchorProvider(connection, (window as any).solana, AnchorProvider.defaultOptions());
+    const program: any = new Program(idl_broken as any, provider);
     return { connection, provider, program };
 }
 
@@ -48,10 +55,54 @@ export async function modifyGlobalData(wallet: PublicKey, epochLockTime: number,
     }).rpc();
     return tx;
 }
+export async function getReclaimable(wallet: PublicKey) {
+    const { program } = getBrokenProvider();
+    const [globalAccountAddress] = PublicKey.findProgramAddressSync(
+        [Buffer.from("global")],
+        program.programId
+    );
+    const globalAccount = await program.account.globalDataAccount.fetch(globalAccountAddress);
+    const epochBN = new BN(globalAccount.epoch);
+    console.log(epochBN.toString());
+    try {
+        let accounts = await program.account.lockAccount.all([
+            {
+                memcmp: {
+                    offset: 24,
+                    bytes: wallet.toBase58()
+                }
+            }
+        ]);
+        console.log(accounts);
+        return {
+            accounts,
+            amount: accounts.reduce((prev: BN, curr: BN) => curr.account.amount.add(prev), new BN(0)),
+            canClaim: false
+        };
+    } catch (e) {
+        console.error(e);
+        return {
+            accounts: [],
+            amount: new BN(0),
+            canClaim: false
+        };
+    }
+}
+export async function reclaim(wallet: PublicKey) {
+    const { program } = getBrokenProvider();
+    const { accounts } = await getReclaimable(wallet);
+    const [globalAccountAddress] = PublicKey.findProgramAddressSync(
+        [Buffer.from("global")],
+        program.programId
+    );
+    const globalAccount = await program.account.globalDataAccount.fetch(globalAccountAddress);
+    const epochBN = new BN(globalAccount.epoch);
+    // finish later when i can test
+}
 export async function deposit(wallet: PublicKey, amount: BN) {
     const { program } = getProvider();
     const signerTokenAccount = getAssociatedTokenAddressSync(ogcMint, wallet);
-    const tx = await program.methods.depositOgg(new BN(amount)).accounts({
+    const tx = await program.methods.depositOgc(new BN(amount)).accounts({
         signer: wallet,
         signerTokenAccount,
     }).rpc();
@@ -60,7 +111,7 @@ export async function deposit(wallet: PublicKey, amount: BN) {
 export async function withdraw(wallet: PublicKey, amount: BN) {
     const { program } = getProvider();
     const signerTokenAccount = getAssociatedTokenAddressSync(ogcMint, wallet);
-    const tx = await program.methods.withdrawOgg(new BN(amount)).accounts({
+    const tx = await program.methods.withdrawOgc(new BN(amount)).accounts({
         signer: wallet,
         signerTokenAccount
     }).rpc();
@@ -305,7 +356,6 @@ export async function getEpochVotes(epoch: number) {
         program.programId
     );
     const epochAccount = await program.account.epochAccount.fetch(epochAccountAddress);
-    console.log(epochAccount.voters.toString());
     return { epochVotes: epochAccount.fields, totalVotes: epochAccount.voters };
 }
 export function calculateVoteCost(n: BN, feeLamports: BN) {
