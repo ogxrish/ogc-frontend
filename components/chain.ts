@@ -49,6 +49,7 @@ export async function modifyGlobalData(wallet: PublicKey, epochLockTime: number,
     return tx;
 }
 export async function deposit(wallet: PublicKey, amount: BN) {
+    return;
     const { program } = getProvider();
     const signerTokenAccount = getAssociatedTokenAddressSync(ogcMint, wallet);
     const tx = await program.methods.depositOgg(new BN(amount)).accounts({
