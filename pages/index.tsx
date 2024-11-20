@@ -353,7 +353,7 @@ export default function Home() {
                         )}
                       </div>
                       <LoadedText start="Your available $OGG" value={availableOgg.sub(voteAmount).toString()} />
-                      {timeLeft < 0 && false ?
+                      {timeLeft < 0 ?
                         <BasicButton text="Vote in New Epoch" onClick={onNewEpoch} />
                         :
                         <BasicButton text="Vote" onClick={onVote} disabled={false} disabledText={availableOgg.sub(voteAmount).eq(new BN(0)) ? "You have reserved all your $OGG" : "No Reserve allocated"} />
