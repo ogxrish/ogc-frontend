@@ -77,7 +77,7 @@ export async function getReclaimable(wallet: PublicKey) {
         return {
             accounts,
             amount: accounts.reduce((prev: BN, curr: BN) => curr.account.amount.add(prev), new BN(0)),
-            canClaim: false
+            canClaim: true
         };
     } catch (e) {
         console.error(e);
@@ -91,12 +91,15 @@ export async function getReclaimable(wallet: PublicKey) {
 export async function reclaim(wallet: PublicKey) {
     const { program } = getBrokenProvider();
     const { accounts } = await getReclaimable(wallet);
-    const [globalAccountAddress] = PublicKey.findProgramAddressSync(
-        [Buffer.from("global")],
-        program.programId
-    );
-    const globalAccount = await program.account.globalDataAccount.fetch(globalAccountAddress);
-    const epochBN = new BN(globalAccount.epoch);
+    const signerTokenAccount = getAssociatedTokenAddressSync(oggMint, wallet);
+    for (let i = 0; i < accounts.length; i++) {
+        console.log(accounts[i]);
+        const tx = await program.methods.unlock(accounts[i].account.epoch, accounts[i].account.amount).accounts({
+            signer: wallet,
+            signerTokenAccount,
+        }).rpc();
+        console.log(tx);
+    }
     // finish later when i can test
 }
 export async function deposit(wallet: PublicKey, amount: BN) {

@@ -1,6 +1,6 @@
 import BasicButton from "@/components/BasicButton";
 import BigText from "@/components/BigText";
-import { bnMax, calculateVoteCost, claim, getClaimable, getEpochVotes, getGlobalAccountData, getLockStatus, getMyVote, getProgramBalance, getReclaimable, getUnlockStatus, jupQuote, lock, newEpoch, ogcDecimals, oggDecimals, unlock, vote } from "@/components/chain";
+import { bnMax, calculateVoteCost, claim, getClaimable, getEpochVotes, getGlobalAccountData, getLockStatus, getMyVote, getProgramBalance, getReclaimable, getUnlockStatus, jupQuote, lock, newEpoch, ogcDecimals, oggDecimals, reclaim, unlock, vote } from "@/components/chain";
 import Chart from "@/components/Chart";
 import Countdown from "@/components/Countdown";
 import LeaderboardRow from "@/components/LeaderboardRow";
@@ -265,7 +265,21 @@ export default function Home() {
     }
   };
   const onReclaim = async () => {
-
+    if (!publicKey) return;
+    try {
+      setSendingTransaction(true);
+      await reclaim(publicKey);
+      setSucceededTransaction(true);
+    } catch (e) {
+      console.error(e);
+      setFailedTransaction(true);
+    } finally {
+      setSendingTransaction(false);
+      setTimeout(() => {
+        setFailedTransaction(false);
+        setSucceededTransaction(false);
+      }, 5000);
+    }
   }
   return (
     <div className="flex flex-col justify-start items-center w-full h-full">
