@@ -143,7 +143,7 @@ export default function Home() {
           setMyVote(fields.map((b: BN) => b.div(oggFactor)));
           setVoteAmount(voteAmount.div(oggFactor))
         } else {
-          setBaseCount(epochVotes.map((b: BN) => b.div(oggFactor)));
+          (epochVotes.map((b: BN) => b.div(oggFactor)));
         }
       });
       getClaimable(publicKey, globalAccount.epoch).then(({ reward }) => {
@@ -368,6 +368,7 @@ export default function Home() {
                               title={names[i]}
                               percent={baseCount[i].mul(HUNDRED).div(maxBalance).toNumber()}
                               voted={myVote[i].mul(HUNDRED).div(maxBalance).toNumber()}
+                              myTotal={myVote[i].toNumber()}
                               added={voteCount[i].mul(HUNDRED).div(maxBalance).toNumber()}
                               total={baseCount[i].add(voteCount[i]).add(myVote[i])}
                               addAmount={voteCount[i].toNumber()}

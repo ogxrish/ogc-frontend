@@ -4,6 +4,7 @@ type PoolWidgetProps = {
     percent: number;
     voted: number;
     total: number;
+    myTotal: number;
     added: number;
     addAmount: number;
     available: number;
@@ -12,7 +13,7 @@ type PoolWidgetProps = {
     subtractDisabled?: boolean;
 };
 
-export default function PoolWidget({ title, percent, voted, added, total, addAmount, onChangeAddAmount, addDisabled, subtractDisabled, available }: PoolWidgetProps) {
+export default function PoolWidget({ title, percent, voted, added, total, myTotal, addAmount, onChangeAddAmount, addDisabled, subtractDisabled, available }: PoolWidgetProps) {
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = Number(event.target.value);
         if (!Number.isNaN(value)) {
@@ -27,6 +28,7 @@ export default function PoolWidget({ title, percent, voted, added, total, addAmo
                 <div className="w-full bg-yellow-500" style={{height: `${Math.min(voted, 100)}%`}}></div>
                 <div className="w-full bg-gray-500 rounded-b-md" style={{ height: `${Math.min(percent, 100)}%` }}></div>
                 <p className="absolute top-0 left-0 w-full h-full text-center align-center">{total.toString()}</p>
+                <p className="absolute bottom-0 left-0 w-full text-center align-center">{myTotal.toString()}</p>
             </div>
             <div className="flex flex-row justify-center items-center md:gap-2">
             <button disabled={subtractDisabled} onClick={() => onChangeAddAmount(Math.max(-100, -1 * addAmount))} className={`w-4 md:w-7 text-[8px] md:text-base aspect-square text-center rounded-full border border-white ${subtractDisabled ? "opacity-30 hover:cursor-not-allowed" : "cursor-pointer"}`}>
