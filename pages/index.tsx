@@ -67,13 +67,11 @@ export default function Home() {
   }, [state]);
   useEffect(() => {
     (async () => {
-
-      return;
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/ogc-data`);
       const json = await response.json();
       console.log(json);
-      setTotalLockedOgg(json.totalLocked);
-      setTotalUnlockableOgg(json.totalUnlockable);
+      setTotalLockedOgg(new BN(json.totalLocked).div(new BN(10 ** oggDecimals)).toString());
+      setTotalUnlockableOgg(new BN(json.totalUnlockable).div(new BN(10 ** oggDecimals)).toString());
       setLeaderboard(json.leaderboard);
       setChartData(json.incremental.map((i: any) => {
         return {
@@ -401,7 +399,7 @@ export default function Home() {
                         <div className="grid grid-cols-3 w-full">
                           <p>Wallet</p>
                           <p>$OGC Claimed</p>
-                          <p>Epochs Participated In</p>
+                          <p>Times Voted</p>
                         </div>
                         {leaderboard.map((row, i) => (
                           <div className="w-full" key={i}>
