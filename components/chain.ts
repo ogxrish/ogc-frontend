@@ -418,6 +418,7 @@ export function bnMax(...bns: BN[]) {
             max = bn;
         }
     }
+    //
     return max;
 }
 export function bnMin(...bns: BN[]) {
