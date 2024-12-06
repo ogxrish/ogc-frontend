@@ -69,18 +69,18 @@ export default function Home() {
     (async () => {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/ogc-data`);
       const json = await response.json();
-      console.log(json);
       setTotalLockedOgg(new BN(json.totalLocked).div(new BN(10 ** oggDecimals)).toString());
       setTotalUnlockableOgg(new BN(json.totalUnlockable).div(new BN(10 ** oggDecimals)).toString());
       setLeaderboard(json.leaderboard);
       setChartData(json.incremental.map((i: any) => {
+        console.log(i);
         return {
           id: Number(i.id),
-          dailyReward: new BN(json.dailyOgcReward).div(new BN(10 ** ogcDecimals)).toNumber(),
-          totalReserve: new BN(json.totalReserve).div(new BN(10 ** ogcDecimals)).toNumber(),
-          totalReservers: Number(json.totalReservers),
-          unlockableOgg: new BN(json.unlockableOgg).div(new BN(10 * oggDecimals)).toNumber(),
-          lockedOgg: new BN(json.lockedOgg).div(new BN(10 * oggDecimals)).toNumber(),
+          dailyReward: new BN(i.dailyOgcReward).div(new BN(10 ** ogcDecimals)).toNumber(),
+          totalReserve: new BN(i.totalReserve).div(new BN(10 ** ogcDecimals)).toNumber(),
+          totalReservers: Number(i.totalReservers),
+          unlockableOgg: new BN(i.unlockableOgg).div(new BN(10 * oggDecimals)).toNumber(),
+          lockedOgg: new BN(i.lockedOgg).div(new BN(10 * oggDecimals)).toNumber(),
         }
       }))
     })();
