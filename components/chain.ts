@@ -441,3 +441,15 @@ export async function jupQuote(from: string, to: string, amount: number) {
         return { outAmount: 0 }
     }
 }
+
+export async function getOggBalance(publicKey: PublicKey) {
+    const { connection } = getProvider();
+    const userOggAccount = getAssociatedTokenAddressSync(oggMint, publicKey);
+    try {
+        const account = await getAccount(connection, userOggAccount);
+        return account.amount / BigInt(10 ** oggDecimals);
+    } catch (e) {
+        return BigInt(0);
+    }
+
+}

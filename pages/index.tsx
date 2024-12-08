@@ -1,6 +1,6 @@
 import BasicButton from "@/components/BasicButton";
 import BigText from "@/components/BigText";
-import { bnMax, calculateVoteCost, claim, getClaimable, getEpochVotes, getGlobalAccountData, getLockStatus, getMyVote, getProgramBalance, getReclaimable, getUnlockStatus, jupQuote, lock, newEpoch, ogcDecimals, oggDecimals, reclaim, unlock, vote } from "@/components/chain";
+import { bnMax, calculateVoteCost, claim, getClaimable, getEpochVotes, getGlobalAccountData, getLockStatus, getMyVote, getOggBalance, getProgramBalance, getReclaimable, getUnlockStatus, jupQuote, lock, newEpoch, ogcDecimals, oggDecimals, reclaim, unlock, vote } from "@/components/chain";
 import Chart from "@/components/Chart";
 import Countdown from "@/components/Countdown";
 import LeaderboardRow from "@/components/LeaderboardRow";
@@ -44,11 +44,14 @@ export default function Home() {
   const [voteCostUSD, setVoteCostUSD] = useState<string>();
   const [voteRewardUSD, setVoteRewardUSD] = useState<string>();
   const [totalUnlockableOgg, setTotalUnlockableOgg] = useState<string>();
+  const [totalUnlockableOggUsd, setTotalUnlockableOggUsd] = useState<string>();
   const [totalLockedOgg, setTotalLockedOgg] = useState<string>();
+  const [totalLockedOggUsd, setTotalLockedOggUsd] = useState<string>();
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [chartData, setChartData] = useState<any[]>();
-  const [reclaimableOgg, setReclaimableOgg] = useState<BN>(new BN(0));
-  const [canClaim, setCanClaim] = useState<boolean>(false);
+  const [oggBalance, setOggBalance] = useState<bigint>(BigInt(0));
+  // const [reclaimableOgg, setReclaimableOgg] = useState<BN>(new BN(0));
+  // const [canClaim, setCanClaim] = useState<boolean>(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -69,8 +72,14 @@ export default function Home() {
     (async () => {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/ogc-data`);
       const json = await response.json();
-      setTotalLockedOgg(new BN(json.totalLocked).div(new BN(10 ** oggDecimals)).toString());
-      setTotalUnlockableOgg(new BN(json.totalUnlockable).div(new BN(10 ** oggDecimals)).toString());
+      const totalLockedOgg = new BN(json.totalLocked).div(new BN(10 ** oggDecimals)).toString();
+      const oggQuote1 = await jupQuote("5gJg5ci3T7Kn5DLW4AQButdacHJtvADp7jJfNsLbRc1k", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", totalLockedOgg);
+      setTotalLockedOgg(totalLockedOgg);
+      const totalUnlockableOgg = new BN(json.totalUnlockable).div(new BN(10 ** oggDecimals)).toString();
+      const oggQuote2 = await jupQuote("5gJg5ci3T7Kn5DLW4AQButdacHJtvADp7jJfNsLbRc1k", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", totalUnlockableOgg);
+      setTotalLockedOggUsd((oggQuote1.outAmount / 10 ** 6).toFixed(2));
+      setTotalUnlockableOggUsd((oggQuote2.outAmount / 10 ** 6).toFixed(2));
+      setTotalUnlockableOgg(totalUnlockableOgg);
       setLeaderboard(json.leaderboard);
       setChartData(json.incremental.map((i: any) => {
         console.log(i);
@@ -108,10 +117,13 @@ export default function Home() {
       setAvailableOgg(locked.div(oggFactor));
       setLockedOgg(locked);
     });
-    getReclaimable(publicKey).then(({ amount, canClaim }) => {
-      setReclaimableOgg(amount)
-      setCanClaim(canClaim)
+    getOggBalance(publicKey).then((amount) => {
+      setOggBalance(amount);
     })
+    // getReclaimable(publicKey).then(({ amount, canClaim }) => {
+    //   setReclaimableOgg(amount)
+    //   setCanClaim(canClaim)
+    // })
   }, [publicKey]);
   useEffect(() => {
     if (publicKey && globalAccount) {
@@ -320,13 +332,14 @@ export default function Home() {
               :
               state === "LOCK" ?
                 <div className="flex flex-col justify-center gap-10 items-center w-full h-full">
-                  <LoadedText start="Total Locked $OGG" value={totalLockedOgg} />
-                  <LoadedText start="Total Unlockable $OGG" value={totalUnlockableOgg} />
-                  <div className="flex flex-row justify-start items-center w-full gap-10 overflow-x-auto">
-                  <div className="flex flex-col justify-center items-center gap-2">
+                  <LoadedText start="Total Locked $OGG" value={totalLockedOgg && totalLockedOggUsd ? `${totalLockedOgg} | ${totalLockedOggUsd}` : undefined} />
+                  <LoadedText start="Total Unlockable $OGG" value={totalUnlockableOgg && totalUnlockableOggUsd ? `${totalUnlockableOgg} | ${totalUnlockableOggUsd}` : undefined} />
+                  <LoadedText start="Your Available $OGG" value={oggBalance} />
+                  <div className="flex flex-row justify-center items-center w-full gap-10 overflow-x-auto">
+                  {/* <div className="flex flex-col justify-center items-center gap-2">
                     <BigText text="Reclaimable $OGG" number={reclaimableOgg.div(new BN(10 ** oggDecimals)).toString()} />
                     <BasicButton onClick={onReclaim} text="Reclaim" disabled={!canClaim} disabledText="Reclaim opens soon" />
-                  </div>
+                  </div> */}
                     <div>
                       <BigText text="Locked $OGG" number={lockedOgg.div(new BN(10 ** oggDecimals)).toString()} />
                       <div className="flex flex-row justify-center items-center gap-2 mt-2">
