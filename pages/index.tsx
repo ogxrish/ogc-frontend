@@ -323,8 +323,8 @@ export default function Home() {
               <div className="flex flex-col justify-between items-center text-center w-full h-full">
                 <p>Welcome to the OG Reserve. The reserve <ImportantSpan>distributes $OGC</ImportantSpan>, the common value of the Realm of OGs.</p>
                 <p><ImportantSpan>70% (700B)</ImportantSpan> of $OGC is forever allocated to the reserve</p>
-                <p>Distributions equal <ImportantSpan>1M $OGC</ImportantSpan> to a random reserve slot each epoch. Epochs last for 24 hours beginning at 00:00 UTC.</p>
-                <p>Wallets can add Reserves to any reserve slot each epoch for any amount of $OGG. Reserve cost <ImportantSpan>increases</ImportantSpan> with each new reserve during an epoch. Difficulty <ImportantSpan>resets</ImportantSpan> each epoch. $OGG reserves are locked to reserve slots for 100 epochs. Reserves are distributed their proportion of $OGC while locked.</p>
+                <p>Distributions equal <ImportantSpan>274M $OGC</ImportantSpan> to the 2nd largest reserve slot each epoch. Epochs last for 24 hours beginning at 00:00 UTC.</p>
+                <p>$OGC is locked in the reserve for <ImportantSpan>100 epochs</ImportantSpan>. Wallets can add Reserves to any reserve slot each epoch for any amount of $OGG. Reserve cost <ImportantSpan>increases</ImportantSpan> with each new reserve during an epoch. Difficulty <ImportantSpan>resets</ImportantSpan> each epoch. $OGG reserves are locked to reserve slots for 100 epochs. Reserves are distributed their proportion of $OGC while locked.</p>
                 <p>Reserve fees are currently <ImportantSpan>paid in $SOL</ImportantSpan>. $OGG and $OGC will soon be allowed.</p>
                 <p><ImportantSpan>100% of reserve fees</ImportantSpan> collected go towards repurchasing $OGC from the open market to replenish the reserve. $OGC distributed but unclaimed after 10 epochs is <ImportantSpan>returned to the reserve</ImportantSpan>.</p>
                 <p><ImportantSpan>Those with $OGC liquidity will ascend in the Realm of OGs</ImportantSpan></p>
