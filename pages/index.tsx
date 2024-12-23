@@ -50,6 +50,7 @@ export default function Home() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [chartData, setChartData] = useState<any[]>();
   const [oggBalance, setOggBalance] = useState<bigint>(BigInt(0));
+  const [totalVotes, setTotalVotes] = useState<BN>();
   // const [reclaimableOgg, setReclaimableOgg] = useState<BN>(new BN(0));
   // const [canClaim, setCanClaim] = useState<boolean>(false);
   const router = useRouter();
@@ -82,7 +83,6 @@ export default function Home() {
       setTotalUnlockableOgg(totalUnlockableOgg);
       setLeaderboard(json.leaderboard);
       setChartData(json.incremental.map((i: any) => {
-        console.log(i);
         return {
           id: Number(i.id),
           dailyReward: new BN(i.dailyOgcReward).div(new BN(10 ** ogcDecimals)).toNumber(),
@@ -107,7 +107,6 @@ export default function Home() {
         feeLamports: data.feeLamports
       });
       setTimeLeft(end - Date.now() / 1000);
-      setOgcReward(data.rewardAmount);
     });
   }, []);
   useEffect(() => {
@@ -138,8 +137,10 @@ export default function Home() {
         const cost = calculateVoteCost(totalVotes, globalAccount.feeLamports).toNumber() / LAMPORTS_PER_SOL;
         const solQuote = await jupQuote("So11111111111111111111111111111111111111112", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", cost * LAMPORTS_PER_SOL);
         setVoteCostUSD((solQuote.outAmount / 10 ** 6).toFixed(2))
-        const ogcQuote = await jupQuote("DH5JRsRyu3RJnxXYBiZUJcwQ9Fkb562ebwUsufpZhy45", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", globalAccount.rewardAmount);
+        const ogcQuote = await jupQuote("DH5JRsRyu3RJnxXYBiZUJcwQ9Fkb562ebwUsufpZhy45", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", globalAccount.rewardAmount / totalVotes.toNumber());
+        setOgcReward(new BN(globalAccount.rewardAmount).div(totalVotes));
         setVoteRewardUSD((ogcQuote.outAmount / 10 ** 6).toFixed(2));
+        setTotalVotes(totalVotes);
         setVoteCost(cost);
         if (fields) {
           let voteAmount = new BN(0)
@@ -149,11 +150,13 @@ export default function Home() {
           const baseCount = epochVotes.map((vote: BN, i: number) => {
             return vote.sub(fields[i]);
           });
+          // console.log(baseCount.map(b => b.toString()));
           setBaseCount(baseCount.map((b: BN) => b.div(oggFactor)));
           setMyVote(fields.map((b: BN) => b.div(oggFactor)));
           setVoteAmount(voteAmount.div(oggFactor))
         } else {
-          (epochVotes.map((b: BN) => b.div(oggFactor)));
+          // (epochVotes.map((b: BN) => b.div(oggFactor)));
+          setBaseCount(epochVotes.map((b: BN) => b.div(oggFactor)));
         }
       });
       getClaimable(publicKey, globalAccount.epoch).then(({ reward }) => {
@@ -370,6 +373,7 @@ export default function Home() {
                 state === "STAKE" ?
                   <>
                     <div className="flex flex-col justify-center items-center gap-4">
+                      <LoadedText start="Number of Reservers" value={totalVotes !== undefined ? `${totalVotes.toNumber()}` : undefined} />
                       <LoadedText start="Reserve Cost" value={voteCost !== undefined ? `${voteCost.toString()} $SOL | ${Number.isNaN(Number(voteCostUSD)) ? Number(0).toFixed(2) : voteCostUSD} $USDC` : ""} />
                       <LoadedText start="Reserve Reward" value={ogcReward !== undefined ? `${ogcReward.div(new BN(10 ** ogcDecimals)).toString()} $OGC | ${Number.isNaN(voteRewardUSD) ? 0 : voteRewardUSD} $USDC` : ""} />
                       <div className="grid grid-cols-4 gap-2">
