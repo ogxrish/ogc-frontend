@@ -109,7 +109,7 @@ export default function Home() {
       setTimeLeft(end - Date.now() / 1000);
     });
   }, []);
-  useEffect(() => {
+  useEffect(() => { //
     if (!publicKey) return;
     getLockStatus(publicKey).then((locked) => {
       const oggFactor = new BN(10 ** oggDecimals)
