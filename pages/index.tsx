@@ -14,7 +14,7 @@ import { BN } from "@coral-xyz/anchor";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 //
 const DEFAULT_MAX: number = new BN(10000);
 const HUNDRED: BN = new BN(100)
@@ -33,7 +33,7 @@ export default function Home() {
   const [baseCount, setBaseCount] = useState<BN[]>(Array.from({ length: 4 }).map(() => new BN(0)));
   const [voteCount, setVoteCount] = useState<BN[]>(Array.from({ length: 4 }).map(() => new BN(0)));
   const [voteCost, setVoteCost] = useState<BN>(new BN(0));
-  const [myVote, setMyVote] = useState<BN[]>(Array.from({length: 4}).map(() => new BN(0)));
+  const [myVote, setMyVote] = useState<BN[]>(Array.from({ length: 4 }).map(() => new BN(0)));
   const [voteAmount, setVoteAmount] = useState<BN>(new BN(0));
   const [lockAmount, setLockAmount] = useState<number>(0);
   const [unlockableOgg, setUnlockableOgg] = useState<BN>(new BN(0));
@@ -54,7 +54,6 @@ export default function Home() {
   // const [reclaimableOgg, setReclaimableOgg] = useState<BN>(new BN(0));
   // const [canClaim, setCanClaim] = useState<boolean>(false);
   const router = useRouter();
-
   useEffect(() => {
     if (router && router.isReady) {
       const { state } = router.query;
@@ -335,11 +334,11 @@ export default function Home() {
               :
               state === "LOCK" ?
                 <div className="flex flex-col justify-center gap-10 items-center w-full h-full">
-                  <LoadedText start="Total Locked $OGG" value={totalLockedOgg && totalLockedOggUsd ? `${totalLockedOgg} | ${totalLockedOggUsd}` : undefined} />
-                  <LoadedText start="Total Unlockable $OGG" value={totalUnlockableOgg && totalUnlockableOggUsd ? `${totalUnlockableOgg} | ${totalUnlockableOggUsd}` : undefined} />
+                  <LoadedText start="Total Locked $OGG" value={totalLockedOgg && totalLockedOggUsd ? `${totalLockedOgg} | $${totalLockedOggUsd}` : undefined} />
+                  <LoadedText start="Total Unlockable $OGG" value={totalUnlockableOgg && totalUnlockableOggUsd ? `${totalUnlockableOgg} | $${Number.isNaN(Number(totalUnlockableOggUsd)) ? "0.00" : totalUnlockableOggUsd}` : undefined} />
                   <LoadedText start="Your Available $OGG" value={oggBalance} />
                   <div className="flex flex-row justify-center items-center w-full gap-10 overflow-x-auto">
-                  {/* <div className="flex flex-col justify-center items-center gap-2">
+                    {/* <div className="flex flex-col justify-center items-center gap-2">
                     <BigText text="Reclaimable $OGG" number={reclaimableOgg.div(new BN(10 ** oggDecimals)).toString()} />
                     <BasicButton onClick={onReclaim} text="Reclaim" disabled={!canClaim} disabledText="Reclaim opens soon" />
                   </div> */}
@@ -374,8 +373,9 @@ export default function Home() {
                   <>
                     <div className="flex flex-col justify-center items-center gap-4">
                       <LoadedText start="Number of Reservers" value={totalVotes !== undefined ? `${totalVotes.toNumber()}` : undefined} />
-                      <LoadedText start="Reserve Cost" value={voteCost !== undefined ? `${voteCost.toString()} $SOL | ${Number.isNaN(Number(voteCostUSD)) ? Number(0).toFixed(2) : voteCostUSD} $USDC` : ""} />
+                      <LoadedText start="Epoch Reward" value={274000000} />
                       <LoadedText start="Reserve Reward" value={ogcReward !== undefined ? `${ogcReward.div(new BN(10 ** ogcDecimals)).toString()} $OGC | ${Number.isNaN(voteRewardUSD) ? 0 : voteRewardUSD} $USDC` : ""} />
+                      <LoadedText start="Reserve Cost" value={voteCost !== undefined ? `${voteCost.toString()} $SOL | ${Number.isNaN(Number(voteCostUSD)) ? Number(0).toFixed(2) : voteCostUSD} $USDC` : ""} />
                       <div className="grid grid-cols-4 gap-2">
                         {Array.from({ length: 4 }).map((_, i) =>
                           <div key={i}>
@@ -410,7 +410,7 @@ export default function Home() {
                       <BasicButton onClick={onClaim} text="Claim" disabled={claimableOgc.eq(new BN(0))} disabledText="No OGC to claim" />
                     </div>
                     :
-                    <div className="flex flex-col justify-center items-center">
+                    <div className="flex flex-col justify-center items-center w-full">
                       <Chart data={chartData} />
                       <div className="flex flex-col justify-center items-center">
                         <div className="grid grid-cols-3 w-full">
@@ -439,7 +439,7 @@ export default function Home() {
 
 function ImportantSpan({ children }: { children: React.ReactNode; }) {
   return (
-    <span className="text-white font-bold">
+    <span className="text-[#ECECEC] font-extrabold drop-shadow-lg">
       {children}
     </span>
   );
