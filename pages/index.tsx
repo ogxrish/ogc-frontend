@@ -19,7 +19,7 @@ import { useEffect, useMemo, useState } from "react";
 const DEFAULT_MAX: number = new BN(10000);
 const HUNDRED: BN = new BN(100)
 const names: string[] = ["Alpha", "Beta", "Gamma", "Delta"];
-type ViewState = "INFO" | "LOCK" | "STAKE" | "CLAIM" | "STATS";
+type ViewState = "INFO" | "LOCK" | "RESERVE" | "CLAIM" | "STATS";
 export default function Home() {
   const { publicKey, signTransaction } = useWallet();
   const [state, setState] = useState<ViewState>("INFO");
@@ -314,13 +314,14 @@ export default function Home() {
         <div className="flex flex-row justify-center items-center gap-2">
           <BasicButton onClick={() => setState("INFO")} text="Info" disabled={state === "INFO"} />
           <BasicButton onClick={() => setState("LOCK")} text="Lock" disabled={state === "LOCK"} />
-          <BasicButton onClick={() => setState("STAKE")} text="Reserve" disabled={state === "STAKE"} />
+          <BasicButton onClick={() => setState("RESERVE")} text="Reserve" disabled={state === "RESERVE"} />
           <BasicButton onClick={() => setState("CLAIM")} text="Claim" disabled={state === "CLAIM"} />
           <BasicButton onClick={() => setState("STATS")} text="Stats" disabled={state === "STATS"} />
         </div>
 
         <div className="flex flex-col gap-2 justify-start overflow-y-auto items-center h-full w-full border-white border-2 rounded-lg p-4 bg-black">
           <div className="flex flex-col justify-start items-center overflow-y-auto w-full h-full">
+            <p className="uppercase text-2xl lg:text-4xl font-extrabold mb-2">{state}</p>
             {state === "INFO" ?
               <div className="flex flex-col justify-between items-center text-center w-full h-full">
                 <p>Welcome to the OG Reserve. The reserve <ImportantSpan>distributes $OGC</ImportantSpan>, the common value of the Realm of OGs.</p>
@@ -369,7 +370,7 @@ export default function Home() {
                   </div>
                 </div>
                 :
-                state === "STAKE" ?
+                state === "RESERVE" ?
                   <>
                     <div className="flex flex-col justify-center items-center gap-4">
                       <LoadedText start="Number of Reservers" value={totalVotes !== undefined ? `${totalVotes.toNumber()}` : undefined} />

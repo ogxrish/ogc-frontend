@@ -15,8 +15,6 @@ export default function Chart({ data }: { data: any; }) {
                     <Legend />
                     <Line type="monotone" dataKey="totalReserve" yAxisId="right" stroke="#82ca9d" />
                     <Line type="monotone" dataKey="totalReservers" yAxisId="left" stroke="#ffc658" />
-                    <Line type="monotone" dataKey="unlockableOgg" yAxisId="right" stroke="#ff0000" />
-                    <Line type="monotone" dataKey="lockedOgg" yAxisId="right" stroke="#8884d8" />
                 </LineChart>
             </ResponsiveContainer>
             <ResponsiveContainer width={"50%"} height={300}>

@@ -5,7 +5,7 @@ export default function NavBar() {
         <div className="flex flex-row justify-between text-xs md:text-base items-center w-full border-b-4 border-white bg-black/80 p-4">
             <div>
                 {/* LOGO */}
-                <p className="text-lg hover:cursor-pointer" onClick={() => window.location.href = "/"}>OGC Reserve</p>
+                <p className="text-lg hover:cursor-pointer" onClick={() => window.location.href = "/"}>OG Reserve</p>
             </div>
             <div></div>
             <div className="flex flex-row justify-center items-center md:gap-2">
