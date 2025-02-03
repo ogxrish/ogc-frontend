@@ -53,6 +53,7 @@ export default function Home() {
   const [oggBalance, setOggBalance] = useState<bigint>(BigInt(0));
   const [totalVotes, setTotalVotes] = useState<BN>();
   const [usingOgc, setUsingOgc] = useState<boolean>(false);
+  const [lastWinningReserves, setLastWinningReserves] = useState<number[]>([]);
   // const [reclaimableOgg, setReclaimableOgg] = useState<BN>(new BN(0));
   // const [canClaim, setCanClaim] = useState<boolean>(false);
   const router = useRouter();
@@ -74,6 +75,7 @@ export default function Home() {
     (async () => {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/ogc-data`);
       const json = await response.json();
+      setLastWinningReserves(json.lastWinningReserves || []);
       const totalLockedOgg = new BN(json.totalLocked).div(new BN(10 ** oggDecimals)).toString();
       const oggQuote1 = await jupQuote("5gJg5ci3T7Kn5DLW4AQButdacHJtvADp7jJfNsLbRc1k", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", totalLockedOgg);
       setTotalLockedOgg(totalLockedOgg);
@@ -381,6 +383,7 @@ export default function Home() {
                   <>
                     <div className="flex flex-col justify-center items-center gap-4">
                       <LoadedText start="Number of Reservers" value={totalVotes !== undefined ? `${totalVotes.toNumber()}` : undefined} />
+                      <LoadedText start="Last Winning Reserve" value={lastWinningReserves.length > 0 ? lastWinningReserves[0] : undefined} />
                       <LoadedText start="Epoch Reward" value={274000000} />
                       <LoadedText start="Reserve Reward" value={ogcReward !== undefined ? `${ogcReward.div(new BN(10 ** ogcDecimals)).toString()} $OGC | ${Number.isNaN(voteRewardUSD) ? 0 : voteRewardUSD} $USDC` : ""} />
                       <LoadedText start="Reserve Cost" value={voteCost !== undefined ? `${voteCost.toString()} $SOL | ${Number.isNaN(Number(voteCostUSD)) ? Number(0).toFixed(2) : voteCostUSD} $USDC` : ""} />
