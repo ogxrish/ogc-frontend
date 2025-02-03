@@ -1,8 +1,9 @@
 import { AnchorProvider, BN, Instruction, Program } from "@coral-xyz/anchor";
-import { Connection, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
+import { BlockhashWithExpiryBlockHeight, Connection, PublicKey, Transaction, TransactionExpiredBlockheightExceededError, TransactionInstruction, VersionedTransaction, VersionedTransactionResponse } from "@solana/web3.js";
 import idl from "./ogc_reserve.json";
 import idl_broken from "./ogc_reserve_broken.json";
 import { createAssociatedTokenAccountInstruction, getAccount, getAssociatedTokenAddressSync, getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
+import promiseRetry from "promise-retry";
 
 const ogcMint = new PublicKey(process.env.NEXT_PUBLIC_OGC_KEY!);
 const oggMint = new PublicKey(process.env.NEXT_PUBLIC_OGG_KEY!);
@@ -120,8 +121,8 @@ export async function withdraw(wallet: PublicKey, amount: BN) {
     }).rpc();
     return tx;
 }
-export async function vote(wallet: PublicKey, epoch: number, votes: number[], signTransaction: any) {
-    const { program, connection } = getProvider();
+export async function vote(wallet: PublicKey, epoch: number, votes: number[], signTransaction: any, swap: boolean, amount: number) {
+    const { program, connection, provider } = getProvider();
     const [voteAccountAddress] = PublicKey.findProgramAddressSync(
         [Buffer.from("vote"), wallet.toBuffer(), new BN(epoch).toArrayLike(Buffer, "le", 8)],
         program.programId
@@ -129,6 +130,30 @@ export async function vote(wallet: PublicKey, epoch: number, votes: number[], si
     const voteAccount = await connection.getAccountInfo(voteAccountAddress);
     const voteBNs = votes.map((v) => new BN(v).mul(new BN(10 ** oggDecimals)));
     let tx;
+    if (swap) {
+        const transaction = await jupiterSwapTx(amount, wallet);
+        const latestBlockHash = await connection.getLatestBlockhash();
+        console.log("here");
+        // Execute the transaction
+        const tx = await provider.wallet.signTransaction(transaction);
+        const rawTransaction = tx.serialize();
+        const result = await transactionSenderAndConfirmationWaiter({
+            connection,
+            serializedTransaction: rawTransaction as any,
+            blockhashWithExpiryBlockHeight: latestBlockHash
+        });
+        console.log(result?.transaction.signatures);
+        // const txid = await connection.sendRawTransaction(rawTransaction, {
+        //     skipPreflight: true,
+        //     maxRetries: 2
+        // });
+
+        // const sig = await connection.confirmTransaction({
+        //     blockhash: latestBlockHash.blockhash,
+        //     lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+        //     signature: txid
+        // });
+    }
     if (!voteAccount) {
         const i = await program.methods.createVoteAccount(new BN(epoch)).accounts({
             signer: wallet
@@ -361,7 +386,7 @@ export async function getEpochVotes(epoch: number) {
     return { epochVotes: epochAccount.fields, totalVotes: epochAccount.voters };
 }
 export function calculateVoteCost(n: BN, feeLamports: BN) {
-   return n.pow(new BN(2)).mul(feeLamports)
+    return n.pow(new BN(2)).mul(feeLamports)
 }
 export async function getMyVote(wallet: PublicKey, epoch: number) {
     const { program } = getProvider();
@@ -452,4 +477,133 @@ export async function getOggBalance(publicKey: PublicKey) {
         return BigInt(0);
     }
 
+}
+
+export async function jupiterSwapTx(amount: number, publicKey: PublicKey) {
+    const quoteResponse = await (
+        await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=${ogcMint.toString()}&outputMint=So11111111111111111111111111111111111111112&amount=${amount}&slippageBps=50`)
+    ).json();
+    const { swapTransaction } = await (
+        await fetch('https://quote-api.jup.ag/v6/swap', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                // quoteResponse from /quote api
+                quoteResponse,
+                // user public key to be used for the swap
+                userPublicKey: publicKey.toString(),
+                // auto wrap and unwrap SOL. default is true
+                wrapAndUnwrapSol: true,
+                // Optional, use if you want to charge a fee.  feeBps must have been passed in /quote API.
+                // feeAccount: "fee_account_public_key"
+            })
+        })
+    ).json();
+    const swapTransactionBuf = Buffer.from(swapTransaction, 'base64');
+    let transaction = VersionedTransaction.deserialize(swapTransactionBuf as any);
+    return transaction;
+}
+
+type TransactionSenderAndConfirmationWaiterArgs = {
+    connection: Connection;
+    serializedTransaction: Buffer;
+    blockhashWithExpiryBlockHeight: BlockhashWithExpiryBlockHeight;
+};
+
+const SEND_OPTIONS = {
+    skipPreflight: true,
+};
+function wait(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+export async function transactionSenderAndConfirmationWaiter({
+    connection,
+    serializedTransaction,
+    blockhashWithExpiryBlockHeight,
+}: TransactionSenderAndConfirmationWaiterArgs): Promise<VersionedTransactionResponse | null> {
+    const txid = await connection.sendRawTransaction(
+        serializedTransaction,
+        SEND_OPTIONS
+    );
+
+    const controller = new AbortController();
+    const abortSignal = controller.signal;
+
+    const abortableResender = async () => {
+        while (true) {
+            await wait(2_000);
+            if (abortSignal.aborted) return;
+            try {
+                await connection.sendRawTransaction(
+                    serializedTransaction,
+                    SEND_OPTIONS
+                );
+            } catch (e) {
+                console.warn(`Failed to resend transaction: ${e}`);
+            }
+        }
+    };
+
+    try {
+        abortableResender();
+        const lastValidBlockHeight =
+            blockhashWithExpiryBlockHeight.lastValidBlockHeight;
+
+        // this would throw TransactionExpiredBlockheightExceededError
+        await Promise.race([
+            connection.confirmTransaction(
+                {
+                    ...blockhashWithExpiryBlockHeight,
+                    lastValidBlockHeight,
+                    signature: txid,
+                    abortSignal,
+                },
+                "confirmed"
+            ),
+            new Promise(async (resolve) => {
+                // in case ws socket died
+                while (!abortSignal.aborted) {
+                    await wait(2_000);
+                    const tx = await connection.getSignatureStatus(txid, {
+                        searchTransactionHistory: false,
+                    });
+                    if (tx?.value?.confirmationStatus === "confirmed") {
+                        resolve(tx);
+                    }
+                }
+            }),
+        ]);
+    } catch (e) {
+        if (e instanceof TransactionExpiredBlockheightExceededError) {
+            // we consume this error and getTransaction would return null
+            return null;
+        } else {
+            // invalid state from web3.js
+            throw e;
+        }
+    } finally {
+        controller.abort();
+    }
+
+    // in case rpc is not synced yet, we add some retries
+    const response = promiseRetry(
+        async (retry: any) => {
+            const response = await connection.getTransaction(txid, {
+                commitment: "confirmed",
+                maxSupportedTransactionVersion: 0,
+            });
+            if (!response) {
+                retry(response);
+            }
+            return response;
+        },
+        {
+            retries: 5,
+            minTimeout: 1e3,
+        }
+    );
+
+    return response;
 }

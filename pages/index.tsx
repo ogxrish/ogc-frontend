@@ -7,6 +7,7 @@ import LeaderboardRow from "@/components/LeaderboardRow";
 import LoadedText from "@/components/LoadedText";
 import PoolWidget from "@/components/PoolWidget";
 import StyledInput from "@/components/StyledInput";
+import Toggle from "@/components/Toggle";
 import TransactionFailure from "@/components/TransactionFailure";
 import TransactionPending from "@/components/TransactionPending";
 import TransactionSuccess from "@/components/TransactionSuccess";
@@ -51,6 +52,7 @@ export default function Home() {
   const [chartData, setChartData] = useState<any[]>();
   const [oggBalance, setOggBalance] = useState<bigint>(BigInt(0));
   const [totalVotes, setTotalVotes] = useState<BN>();
+  const [usingOgc, setUsingOgc] = useState<boolean>(false);
   // const [reclaimableOgg, setReclaimableOgg] = useState<BN>(new BN(0));
   // const [canClaim, setCanClaim] = useState<boolean>(false);
   const router = useRouter();
@@ -204,7 +206,12 @@ export default function Home() {
     if (!publicKey || !globalAccount) return;
     try {
       setSendingTransaction(true);
-      const tx = await vote(publicKey, globalAccount.epoch, voteCount, signTransaction);
+      const votingCost = calculateVoteCost(totalVotes, globalAccount.feeLamports).toNumber();
+      let quote: any = undefined;
+      if (usingOgc) {
+        quote = await jupQuote("So11111111111111111111111111111111111111112", "DH5JRsRyu3RJnxXYBiZUJcwQ9Fkb562ebwUsufpZhy45", votingCost);
+      }
+      const tx = await vote(publicKey, globalAccount.epoch, voteCount, signTransaction, usingOgc, quote?.outAmount);
       console.log(tx);
       setSucceededTransaction(true);
     } catch (e) {
@@ -402,6 +409,10 @@ export default function Home() {
                         :
                         <BasicButton text="Vote" onClick={onVote} disabled={false} disabledText={availableOgg.sub(voteAmount).eq(new BN(0)) ? "You have reserved all your $OGG" : "No Reserve allocated"} />
                       }
+                      <div className="flex flex-row justify-center items-center gap-2">
+                        <p>Using {usingOgc ? "$OGC" : "SOL"} to pay mining fees</p>
+                        <Toggle checked={usingOgc} onChange={setUsingOgc} />
+                      </div>
                     </div>
                   </>
                   :
