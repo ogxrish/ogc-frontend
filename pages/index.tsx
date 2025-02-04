@@ -133,7 +133,8 @@ export default function Home() {
         setUnlockableOgg(amount);
       });
       getMyVote(publicKey, globalAccount.epoch).then(async (fields) => {
-        const { epochVotes, totalVotes } = await getEpochVotes(globalAccount.epoch);
+        let { epochVotes, totalVotes } = await getEpochVotes(globalAccount.epoch);
+
         const oggFactor = new BN(10 ** oggDecimals)
         const summedVotes = bnMax(...epochVotes).div(oggFactor);
         setMaxBalance(bnMax(summedVotes, DEFAULT_MAX).mul(new BN(4)))
@@ -141,9 +142,13 @@ export default function Home() {
         const solQuote = await jupQuote("So11111111111111111111111111111111111111112", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", cost * LAMPORTS_PER_SOL);
         setVoteCostUSD((solQuote.outAmount / 10 ** 6).toFixed(2))
         const ogcQuote = await jupQuote("DH5JRsRyu3RJnxXYBiZUJcwQ9Fkb562ebwUsufpZhy45", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", globalAccount.rewardAmount / totalVotes.toNumber());
-        setOgcReward(new BN(globalAccount.rewardAmount).div(totalVotes));
         setVoteRewardUSD((ogcQuote.outAmount / 10 ** 6).toFixed(2));
         setTotalVotes(totalVotes);
+        if (totalVotes.eq(new BN(0))) {
+          setOgcReward(new BN(globalAccount.rewardAmount));
+        } else {
+          setOgcReward(new BN(globalAccount.rewardAmount).div(totalVotes));
+        }
         setVoteCost(cost);
         if (fields) {
           let voteAmount = new BN(0)
@@ -383,7 +388,7 @@ export default function Home() {
                   <>
                     <div className="flex flex-col justify-center items-center gap-4">
                       <LoadedText start="Number of Reservers" value={totalVotes !== undefined ? `${totalVotes.toNumber()}` : undefined} />
-                      <LoadedText start="Last Winning Reserve" value={lastWinningReserves.length > 0 ? lastWinningReserves[0] : undefined} />
+                      <LoadedText start="Last Winning Reserve" value={lastWinningReserves.length > 0 ? lastWinningReserves[0] : 0} />
                       <LoadedText start="Epoch Reward" value={274000000} />
                       <LoadedText start="Reserve Reward" value={ogcReward !== undefined ? `${ogcReward.div(new BN(10 ** ogcDecimals)).toString()} $OGC | ${Number.isNaN(voteRewardUSD) ? 0 : voteRewardUSD} $USDC` : ""} />
                       <LoadedText start="Reserve Cost" value={voteCost !== undefined ? `${voteCost.toString()} $SOL | ${Number.isNaN(Number(voteCostUSD)) ? Number(0).toFixed(2) : voteCostUSD} $USDC` : ""} />
