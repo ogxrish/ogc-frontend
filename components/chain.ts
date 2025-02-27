@@ -423,7 +423,7 @@ export async function getClaimable(wallet: PublicKey, epoch: number) {
             );
             const epochAccount = await program.account.epochAccount.fetch(epochAccountAddress);
             const winner = epochAccount.winner.toNumber();
-            if (epochAccount.fields[winner].gt(new BN(0))) {
+            if (voteAccount.account.fields[winner].gt(new BN(0))) {
                 const change = voteAccount.account.fields[winner].mul(epochAccount.reward).div(epochAccount.fields[winner]);
                 reward = reward.add(change);
                 epochs.push(voteAccount.account.epoch);
