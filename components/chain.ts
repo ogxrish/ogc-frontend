@@ -2,7 +2,7 @@ import { AnchorProvider, BN, Instruction, Program } from "@coral-xyz/anchor";
 import { BlockhashWithExpiryBlockHeight, Connection, PublicKey, Transaction, TransactionExpiredBlockheightExceededError, TransactionInstruction, VersionedTransaction, VersionedTransactionResponse } from "@solana/web3.js";
 import idl from "./ogc_reserve.json";
 import idl_broken from "./ogc_reserve_broken.json";
-import { createAssociatedTokenAccountInstruction, getAccount, getAssociatedTokenAddressSync, getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
+import { createAssociatedTokenAccountIdempotent, createAssociatedTokenAccountIdempotentInstruction, createAssociatedTokenAccountInstruction, getAccount, getAssociatedTokenAddressSync, getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
 import promiseRetry from "promise-retry";
 
 const ogcMint = new PublicKey(process.env.NEXT_PUBLIC_OGC_KEY!);
@@ -245,6 +245,13 @@ export async function unlock(wallet: PublicKey, epoch: number, amount: BN, signT
     console.log(instructions.length);
     for (let i = 0; i < instructions.length; i += 3) {
         const tx = new Transaction();
+        const createIx = createAssociatedTokenAccountIdempotentInstruction(
+            wallet,
+            signerTokenAccount,
+            wallet,
+            oggMint
+        );
+        tx.add(createIx)
         for (let ii = i; i < i + 3 && i < instructions.length && instructions[ii]; ii++) {
             tx.add(instructions[ii]);
         }
