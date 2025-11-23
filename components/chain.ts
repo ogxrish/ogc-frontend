@@ -224,7 +224,7 @@ export async function lock(wallet: PublicKey, epoch: number, amount: number, sig
     const tx = await connection.sendRawTransaction(signed.serialize());
     return tx;
 }
-export async function unlock(wallet: PublicKey, epoch: number, amount: number, signTransaction: (t: any) => any) {
+export async function unlock(wallet: PublicKey, epoch: number, amount: BN, signTransaction: (t: any) => any) {
     const { program, provider } = getProvider();
     let { accounts } = await getUnlockStatus(wallet, epoch);
     const signerTokenAccount = getAssociatedTokenAddressSync(oggMint, wallet);

@@ -256,7 +256,8 @@ export default function Home() {
     try {
       setSendingTransaction(true);
       console.log(globalAccount.epoch.toString());
-      const txs = await unlock(publicKey, globalAccount.epoch, unlockAmount * 10 ** oggDecimals, signTransaction);
+      const amount = new BN(unlockAmount).mul(new BN(10 ** oggDecimals))
+      const txs = await unlock(publicKey, globalAccount.epoch, amount, signTransaction);
       setUnlockableOgg((unlockableOgg: any) => unlockableOgg.sub(new BN(unlockAmount)));
       setLockedOgg((lockedOgg: any) => lockedOgg.sub(new BN(unlockAmount)));
       console.log(txs);
