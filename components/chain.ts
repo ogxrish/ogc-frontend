@@ -231,7 +231,7 @@ export async function unlock(wallet: PublicKey, epoch: number, amount: BN, signT
     let instructions: TransactionInstruction[] = [];
     let amountBN = new BN(amount);
     let index = 0;
-    while (amountBN.gte(new BN(0)) && index < accounts.length) {
+    while (amountBN.gt(new BN(0)) && index < accounts.length) {
         const min = amountBN.lt(accounts[index].account.amount) ? amountBN : accounts[index].account.amount;
         const ix = await program.methods.unlock(accounts[index].account.epoch, min).accounts({
             signer: wallet,
@@ -252,7 +252,7 @@ export async function unlock(wallet: PublicKey, epoch: number, amount: BN, signT
             oggMint
         );
         tx.add(createIx)
-        for (let ii = i; i < i + 3 && i < instructions.length && instructions[ii]; ii++) {
+        for (let ii = i; ii < i + 3 && ii < instructions.length; ii++) {
             tx.add(instructions[ii]);
         }
         if (tx.instructions.length > 0) {

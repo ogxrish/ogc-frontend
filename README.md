@@ -24,6 +24,10 @@ The `pages/api` directory is mapped to `/api/*`. Files in this directory are tre
 
 This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
 
+## OGG withdrawals
+
+Withdrawals use mature lock accounts and stop adding unlock instructions when the requested amount is satisfied. Each transaction contains at most three unlock instructions and an idempotent associated-token-account creation instruction. Withdrawals spanning more than three lock accounts require multiple sequential transactions.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
